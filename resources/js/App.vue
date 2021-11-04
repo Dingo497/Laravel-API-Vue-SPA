@@ -1,34 +1,70 @@
 <template>
   <main class="flex min-h-screen bg-purple-500 lg:bg-gradient-to-r from-red-400 to-pink">
-    <transition-group tag="div" name="list" class="sm:flex items-start w-screen px-4 py-10 overflow-x-auto">
-
+    <transition-group 
+      tag="div" 
+      name="list" 
+      class="sm:flex items-start w-screen px-4 py-10 overflow-x-auto"
+    >
       <div
         v-if="overlay"
         id="overlay"
         class="bg-black bg-opacity-70 fixed top-0 left-0 w-full h-screen z-10"
-        key="-1"
+        key="0"
       ></div>
 
       <ul v-for="list in lists" :key="list.id">
-        <List @edit-list-title="editListInDatabase($event)" :name="list.name" :id="list.id" :cards="list.cards" />
+        <List 
+          @list-delete="getListsFromDatabase()" 
+          @card-create="getListsFromDatabase()" 
+          @list-title-edit="getListsFromDatabase()"
+          @card-edit="getListsFromDatabase()"
+          @delete-card="getListsFromDatabase()"
+          :name="list.name" 
+          :id="list.id" 
+          :cards="list.cards" 
+        />
       </ul>
 
-      <ListCreateForm @add-new-list="addListToDatabase($event)" key="0" />
+      <ListCreateForm 
+        @list-create="getListsFromDatabase()" 
+        key="-1" 
+      />
 
     </transition-group>
   </main>
+
+  <transition name="list">
+    <ShowAlert key="-2" />
+  </transition>
+
 </template>
 
+
+
 <script>
+// IMPORTS
 import List from './components/List.vue'
 import ListCreateForm from './components/ListCreateForm.vue'
+import ShowAlert from './components/ShowAlert.vue';
 
 export default {
+  // COMPONENTS
   components: {
     List,
     ListCreateForm,
+    ShowAlert,
   },
 
+
+  // MOUNTED APP
+  mounted() {
+    this.getListsFromDatabase()
+
+    window.mitter.on('toggle-overlay', event => this.overlay = event)
+  },
+
+
+  // DATAS
   data() {
     return {
       lists: [],
@@ -37,45 +73,12 @@ export default {
     }
   },
 
-  mounted() {
-    axios
-      .get('http://127.0.0.1:8000/api/todo-lists')
-      .then((response) => {
-        this.lists = response.data.body
-      })
-      .catch((error) => {
-        window.mitter.emit('show-alert', error.response.data)
-        /** DOROBIT */
-      })
 
-    window.mitter.on('toggle-overlay', event => this.overlay = event)
-    window.mitter.on('edit-card-data', event => this.editCardInDatabase(event))
-    window.mitter.on('update-card', () => this.getListsFromDatabase())
-    window.mitter.on('delete-card', () => this.getListsFromDatabase())
-    window.mitter.on('delete-list', () => this.getListsFromDatabase())
-  },
-
+  // METHODS
   methods: {
-    addListToDatabase(data) {
-      // validate
-      if(!data) return
-      if(data.length <= 3) return
-      if(data.length >= 200) return
-
-      // post new list
-      axios
-        .post('http://127.0.0.1:8000/api/todo-lists?title=' + data)
-        .then((response) => {
-          window.mitter.emit('show-alert', response.data.status.message)
-          /** DOROBIT */
-        })
-        .catch((error) => {
-          window.mitter.emit('show-alert', error.response.data.status.message)
-          /** DOROBIT */
-        })
-      this.getListsFromDatabase()
-    },
-
+    /**
+     * Get Lists from database
+     */
     getListsFromDatabase() {
       axios
         .get('http://127.0.0.1:8000/api/todo-lists')
@@ -83,10 +86,10 @@ export default {
           this.lists = response.data.body
         })
         .catch((error) => {
-          window.mitter.emit('show-alert', error.response.data)
-          /** DOROBIT */
+          window.mitter.emit('show-alert', { message: error.response.data.status.message, status: false })
         })
     },
+
 
     editCardInDatabase(data) {
       axios
@@ -101,23 +104,12 @@ export default {
         })
       this.getListsFromDatabase()
     },
-
-    editListInDatabase(data) {
-      axios
-        .patch('http://127.0.0.1:8000/api/todo-lists/' + data.id + '?title=' + data.text)
-        .then((response) => {
-          window.mitter.emit('show-alert', response.data.status.message)
-          console.log(response.data.status.message)
-        })
-        .catch((error) => {
-          window.mitter.emit('show-alert', error.response.data)
-          console.log(error.response.data)
-        })
-    }
   }
 
 }
 </script>
+
+
 
 <style scoped>
 .list-enter-active,

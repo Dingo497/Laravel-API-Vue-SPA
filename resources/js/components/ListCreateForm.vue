@@ -1,6 +1,6 @@
 <template>
   <form
-    @submit.prevent="handleName()"
+    @submit.prevent="addListToDatabase()"
     class="flex-shrink-0 sm:w-80 sm:mx-4 sm:mb-0 sm:pr-8 text-gray-800"
     action="/"
   >
@@ -13,23 +13,48 @@
   </form>
 </template>
 
+
+
 <script>
+// IMPORTS
+import { validateLengthInputs } from '../functions/requests.js'
+
 export default {
+  // DATA
   data() {
     return {
       name: ''
     }
   },
 
+
+
+  // METHODS
   methods: {
-    handleName() {
-      this.$emit('add-new-list', this.name)
+    /**
+     * Validation List
+     * Post List to database
+     * Reset List name
+     * Send emit to reload array of Lists
+     */
+    addListToDatabase() {
+      if(validateLengthInputs(this.name) === false) {
+          this.name = ''
+         return
+      }
+
+      axios
+        .post('http://127.0.0.1:8000/api/todo-lists?title=' + this.name)
+        .then((response) => {
+          window.mitter.emit('show-alert', { message: response.data.status.message, status: true })
+        })
+        .catch((error) => {
+          window.mitter.emit('show-alert', { message: error.response.data.status.message, status: false })
+        })
+        
       this.name = ''
-    }
-  }
+      this.$emit('list-create', this.name)
+    },
+  },
 }
 </script>
-
-<style lang="scss" scoped>
-
-</style>

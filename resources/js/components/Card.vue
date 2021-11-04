@@ -9,11 +9,12 @@
         class="outline-none"
         :class="{ 'shadow-outline': isEditing }"
         :contenteditable="isEditing"
-        @keydown.enter="saveText()"
+        @keydown.enter="editCardInDatabase()"
         @blur="restorePreviousValue()"
       >
         {{ title }}
       </p>
+
       <a 
         @click="doPop()" 
         v-if="!isPopped"
@@ -32,26 +33,33 @@
       </a>
     </div>
 
-  <transition name="pop">
-    <CardPopup 
-      v-if="isPopped"
-      @close-popup="undoPop()"
-      @start-edit-card="editCard()"
-      @start-delete-card="deleteCard()"
-    />
-  </transition>
+    <transition name="pop">
+      <CardPopup 
+        v-if="isPopped"
+        @close-popup="undoPop()"
+        @start-edit-card="editCard()"
+        @start-delete-card="deleteCardFromDatabase()"
+      />
+    </transition>
 
   </li>
 </template>
 
+
+
 <script>
+// IMPORTS
 import CardPopup from './CardPopup.vue';
+import { validateLengthInputs, validateMatchInputs } from '../functions/requests.js'
 
 export default {
+  // COMPONENTS
   components: {
     CardPopup,
   },
 
+
+  // PROPS
   props: {
     title: {
       type: String,
@@ -64,6 +72,8 @@ export default {
     },
   },
 
+
+  // DATAS
   data() {
     return {
       isPopped: false,
@@ -71,69 +81,89 @@ export default {
     }
   },
 
+
+  // METHODS
   methods: {
     doPop() {
       this.isPopped = true
       window.mitter.emit('toggle-overlay', true)
     },
 
+
      undoPop() {
       this.isPopped = false
       window.mitter.emit('toggle-overlay', false)
     },
+
 
     editCard() {
       this.isEditing = true
       setTimeout(() => this.$refs.textCard.focus(), 0)
     },
 
-    saveText() {
-      // Validation
-      if(this.$refs.textCard.textContent.length <= 3 || 
-        this.$refs.textCard.textContent.length >= 200) {
-         this.$refs.textCard.textContent = this.title
-         window.mitter.emit('show-alert', 'something wrong')
-         /* DOROBIT */
-      } else if(this.$refs.textCard.textContent === this.title) {
-        this.$refs.textCard.textContent = this.title
-      } else {
-        window.mitter.emit('edit-card-data', {
-          'id': this.id,
-          'text': this.$refs.textCard.textContent,
-          'todo_list_id': this.idList,
-        })
-      }
-      // disable poppup
-      this.isEditing = false
-      this.undoPop()
-    },
-
-    deleteCard() {
-      if(!confirm('Are you sure about at?')) this.undoPop()
-      else {
-        
-        axios
-          .delete('http://127.0.0.1:8000/api/cards/' + this.id)
-          .then((response) => {
-            console.log(response.data)
-          })
-          .catch((error) => {
-            console.log(error.response.data)
-          })
-
-        this.undoPop()
-        window.mitter.emit('delete-card')
-      }
-    },
 
     restorePreviousValue() {
       this.$refs.textCard.textContent = this.title
       this.isEditing = false
-    }
+    },
+
+
+    /**
+     * Validation Input
+     * Update Input to database
+     * Reset Input name
+     * Hide Input form and poppup
+     * Send emit to reload array of Lists
+     */
+    editCardInDatabase() {
+      if(validateLengthInputs(this.$refs.textCard.textContent) === false ||
+        validateMatchInputs(this.$refs.textCard.textContent, this.title) === false) {
+         this.restorePreviousValue()
+         return
+      }
+      
+      axios
+        .patch('http://127.0.0.1:8000/api/cards/' + this.id + '?title=' + this.$refs.textCard.textContent + '&todo_list_id=' + this.idList)
+        .then((response) => {
+          window.mitter.emit('show-alert', { message: response.data.status.message, status: true })
+        })
+        .catch((error) => {
+          window.mitter.emit('show-alert', { message: error.response.data.status.message, status: false })
+        })
+      
+      this.$refs.textCard.textContent = ''
+      this.isEditing = false
+      this.undoPop()
+      this.$emit('card-edit')
+    },
+
+
+    /**
+     * Delete Card from database
+     * Send emit to reload array of Lists
+     */
+    deleteCardFromDatabase() {
+      if(!confirm('Are you sure about it?')) this.undoPop()
+      else {
+        axios
+          .delete('http://127.0.0.1:8000/api/cards/' + this.id)
+          .then((response) => {
+            window.mitter.emit('show-alert', { message: response.data.status.message, status: true })
+          })
+          .catch((error) => {
+            window.mitter.emit('show-alert', { message: error.response.data.status.message, status: false })
+          })
+
+        this.undoPop()
+        this.$emit('delete-card')
+      }
+    },
   },
 
 }
 </script>
+
+
 
 <style scoped>
 .pop-enter-active,

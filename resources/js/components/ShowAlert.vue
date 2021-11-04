@@ -1,41 +1,72 @@
 <template>
-  <div v-if="visible" class="errorMsg" :class="{successMsg: isSuccess}">
-    <i class="fa fa-times-circle"></i>
-    This is a error message.
+  <div 
+    v-if="visible" 
+    class="errorMsg alert" 
+    :class="{successMsg: status}"
+  >
+    <i 
+      class="fa fa-times-circle cursor"
+      @click="visible = false"
+    ></i>
+    {{ message }}
   </div>
 </template>
 
+
+
 <script>
 export default {
+  // DATAS
   data() {
     return {
       visible: false,
-      isSuccess: false,
+      status: false,
+      message: '',
     }
   },
 
-  mounted() {
+
+  // CREATED
+  created() {
     window.mitter.on('show-alert', event => {
-      console.log(event)
+      this.visible   = false
+      this.status    = event.status
+      this.message   = event.message
+      this.visible   = true
+
+      setTimeout(() => {
+        this.visible = false
+      }, 3000);
     })
-  }
+  },
 }
 </script>
 
+
+
 <style scoped>
 @import url('//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css');
-.successMsg,
-.errorMsg {
-  margin: 10px 0;
+.alert {
   padding: 10px;
+  font-weight: bold;
   border-radius: 3px 3px 3px 3px;
+  position: absolute;
+  top: 2%;
+  margin-left: -96.48px;
+  left: 50%;
 }
 .successMsg {
-  color: #270;
-  background-color: #DFF2BF;
+  color: rgb(255, 255, 255);
+  background-color: #8bdb00;
 }
 .errorMsg {
-  color: #D8000C;
-  background-color: #FFBABA;
+  color: #ffffff;
+  background-color: #c51e1e;
+}
+.cursor {
+  cursor: pointer;
+}
+.cursor:hover {
+  color: #bada55;
 }
 </style>

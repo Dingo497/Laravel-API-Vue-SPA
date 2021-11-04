@@ -4,11 +4,16 @@
       v-if="visible === false"
       @click="showForm()"
       class="p-1 text-gray-500 hover:text-gray-700 link"
-    > Add a card...</a>
+    > 
+      Add a card...
+    </a>
 
-    <form v-if="visible" @submit.prevent="handleText()" >
+    <form 
+      v-if="visible" 
+      @submit.prevent="addCardToDatabase()" 
+    >
       <textarea
-        @keydown.enter="handleText()"
+        @keydown.enter="addCardToDatabase()"
         ref='focusTextArea'
         class="w-full p-3 border-t border-l border-gray-300 outline-none rounded shadow-inner"
         rows="3"
@@ -37,8 +42,21 @@
   </footer>
 </template>
 
+
+
 <script>
+// IMPORTS
+import { validateLengthInputs } from '../functions/requests.js'
+
 export default {
+  // PROPS
+  props: {
+    listId: { type: Number }
+  },
+
+
+
+  // DATA
   data() {
     return {
       visible: false,
@@ -46,29 +64,55 @@ export default {
     }
   },
 
+
+
+  // METHODS
   methods: {
     showForm() {
       this.visible = true
       setTimeout(() => this.$refs.focusTextArea.focus(), 0)
     },
 
+
     hideForm() {
       this.visible = false
     },
 
-    handleText() {
-      this.$emit('add-new-card', this.text)
+
+    /**
+     * Validation Card
+     * Post Card to database
+     * Reset Card name
+     * Hide Card form
+     * Send emit to reload array of Lists
+     */
+    addCardToDatabase() {
+      if(validateLengthInputs(this.text) === false) {
+          this.text = ''
+         return
+      }
+
+      axios
+        .post('http://127.0.0.1:8000/api/cards?title=' + this.text + '&todo_list_id=' + this.listId)
+        .then((response) => {
+          window.mitter.emit('show-alert', { message: response.data.status.message, status: true })
+        })
+        .catch((error) => {
+          window.mitter.emit('show-alert', { message: error.response.data.status.message, status: false })
+        })
+
       this.text = ''
       this.hideForm()
+      this.$emit('card-create')
     },
   }
 }
 </script>
 
-<style scoped>
 
+
+<style scoped>
 .link {
   cursor: pointer;
 }
-
 </style>

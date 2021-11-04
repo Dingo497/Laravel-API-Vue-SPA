@@ -1,16 +1,24 @@
 <template>
-  <transition-group name="card" tag="section" class="list">
-    <header key="0" class="p-1 flex justify-between">
+  <transition-group 
+    name="card" 
+    tag="section" 
+    class="list"
+  >
+    <header 
+      key="0" 
+      class="p-1 flex justify-between"
+    >
       <h3 
         :contenteditable="isEditing"
         ref="nameList"
         @blur="restorePreviousValue()"
         class="p-1 font-bold leading-none text-gray-900 outline-none"
         :class="{ 'shadow-outline': isEditing }"
-        @keydown.enter="saveTitle()"
+        @keydown.enter="editListNameinDatabase()"
       >
         {{ name }}
       </h3>
+
       <div class="flex">
         <a 
         @click="startEditing()" 
@@ -28,28 +36,53 @@
             ></path>
           </svg>
         </a>
-        <a class="flex pointer pb-0-5 delete-btn" @click="deleteList()">
+
+        <a 
+          class="flex pointer pb-0-5 delete-btn" 
+          @click="deleteListFromDatabase()"
+        >
           X
         </a>
       </div>
     </header>
+
     <ul v-for="card in cards" :key="card.id">
-      <Card v-show="card" :title="card.title" :key="card.id" :id="card.id" :idList="id" />
+      <Card 
+        v-show="card" 
+        :title="card.title" 
+        :key="card.id" 
+        :id="card.id" 
+        :idList="id"
+        @card-edit="this.$emit('card-edit')"
+        @delete-card="this.$emit('delete-card')"
+      />
     </ul>
-    <CardCreateForm key="-1" @add-new-card="addCardToDatabase($event)" />
+    
+    <CardCreateForm 
+      key="-1" 
+      @card-create="this.$emit('card-create')" 
+      :listId="id" 
+    />
   </transition-group>
 </template>
 
+
 <script>
+// IMPORTS
 import Card from './Card.vue';
 import CardCreateForm from './CardCreateForm.vue';
+import { validateLengthInputs, validateMatchInputs } from '../functions/requests.js'
 
 export default {
+  // COMPONENTS
   components: {
     Card,
     CardCreateForm,
   },
 
+
+
+  // PROPS
   props: {
     name: {
       type: String,
@@ -62,6 +95,9 @@ export default {
     },
   },
 
+
+
+  // DATA
   data() {
     return {
       newCard: {},
@@ -71,67 +107,74 @@ export default {
     }
   },
 
-  methods: {
-    addCardToDatabase(data) {
-      axios
-        .post('http://127.0.0.1:8000/api/cards?title=' + data + '&todo_list_id=' + this.id)
-        .then((response) => {
-          window.mitter.emit('show-alert', response.data.status.message)
-          /** DOROBIT */
-        })
-        .catch((error) => {
-          window.mitter.emit('show-alert', error.response.data.status.message)
-          /** DOROBIT */
-        })
-      window.mitter.emit('update-card')
-    },
 
+
+  // METHODS
+  methods: {
     startEditing() {
       this.isEditing = true
       setTimeout(() => this.$refs.nameList.focus(), 0)
     },
 
-    saveTitle() {
-      // validation
-      if(this.$refs.nameList.textContent.length <= 3 || 
-        this.$refs.nameList.textContent.length >= 200) {
-         this.$refs.nameList.textContent = this.name
-         window.mitter.emit('show-alert', 'something wrong')
-         /* DOROBIT */
-      } else if(this.$refs.nameList.textContent === this.name) {
-        this.$refs.nameList.textContent = this.name
-      } else {
-        this.$emit('edit-list-title', {
-          'id': this.id,
-          'text': this.$refs.nameList.textContent,
-        })
-      }
-      this.isEditing = false
-    },
-
-    deleteList() {
-      if(!confirm('Are you sure about at?')) return
-      else {
-        axios
-          .delete('http://127.0.0.1:8000/api/todo-lists/' + this.id)
-          .then((response) => {
-            console.log(response.data)
-          })
-          .catch((error) => {
-            console.log(error.response.data)
-          })
-        window.mitter.emit('delete-list')
-      }
-    },
 
     restorePreviousValue() {
       this.$refs.nameList.textContent = this.name
       this.isEditing = false
+    },
+
+
+    /**
+     * Delete full List from database
+     * Send emit to reload array of Lists
+     */
+    deleteListFromDatabase() {
+      if(!confirm('Are you sure about it?')) return
+      else {
+        axios
+          .delete('http://127.0.0.1:8000/api/todo-lists/' + this.id)
+          .then((response) => {
+            window.mitter.emit('show-alert', { message: response.data.status.message, status: true })
+          })
+          .catch((error) => {
+            window.mitter.emit('show-alert', { message: error.response.data.status.message, status: false })
+          })
+        this.$emit('list-delete')
+      }
+    },
+
+
+    /**
+     * Validation Input
+     * Update Input to database
+     * Reset Input name
+     * Hide Input form
+     * Send emit to reload array of Lists
+     */
+    editListNameinDatabase() {
+      if(validateLengthInputs(this.$refs.nameList.textContent) === false ||
+        validateMatchInputs(this.$refs.nameList.textContent, this.name) === false) {
+         this.restorePreviousValue()
+         return
+      }
+
+      axios
+        .patch('http://127.0.0.1:8000/api/todo-lists/' + this.id + '?title=' + this.$refs.nameList.textContent)
+        .then((response) => {
+          window.mitter.emit('show-alert', { message: response.data.status.message, status: true })
+        })
+        .catch((error) => {
+          window.mitter.emit('show-alert', { message: error.response.data.status.message, status: false })
+        })
+
+      this.$refs.nameList.textContent = ''
+      this.isEditing = false
+      this.$emit('list-title-edit')
     }
   },
-  
 }
 </script>
+
+
 
 <style scoped>
 .card-enter-active,
