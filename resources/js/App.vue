@@ -68,7 +68,6 @@ export default {
   data() {
     return {
       lists: [],
-      newList: {},
       overlay: false
     }
   },

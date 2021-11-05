@@ -513,8 +513,8 @@ video {
 }
 
 /**
-	 * LISTS
-	 */
+* LISTS
+*/
 
 .card:hover {
 	--bg-opacity: 1;
@@ -539,8 +539,8 @@ video {
 }
 
 /**
-	 * BUTTONS
-	 */
+* BUTTONS
+*/
 
 .btn {
 	--border-opacity: 1;

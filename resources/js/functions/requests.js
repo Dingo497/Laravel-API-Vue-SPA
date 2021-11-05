@@ -1,10 +1,11 @@
 /**
  * VALIDATE LENGTH INPUT
- * if input string length chain is between 3 and 200
+ * if input string length is between 3 and 200
+ * if is some text
  * and render alert -> flash-message
  *
  * @param {string} text
- * @returns alert -> flash-message
+ * @returns {boolean} && alert -> flash-message
  */
 export function validateLengthInputs(text) {
   if(!text) return false
@@ -35,6 +36,7 @@ export function validateLengthInputs(text) {
  * If not return true.
  *
  * @param {string} currentText
+ * @param {string} previousText
  * @returns {boolean}
  */
 export function validateMatchInputs(currentText, previousText) {

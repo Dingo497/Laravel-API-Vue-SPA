@@ -1,8 +1,8 @@
 <template>
   <div 
     v-if="visible" 
-    class="errorMsg alert" 
-    :class="{successMsg: status}"
+    class="alert" 
+    :class="{successMsg: status, errorMsg: !status}"
   >
     <i 
       class="fa fa-times-circle cursor"

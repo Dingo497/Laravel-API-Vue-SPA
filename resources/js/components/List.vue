@@ -100,9 +100,6 @@ export default {
   // DATA
   data() {
     return {
-      newCard: {},
-      newListId: null,
-      newCards: null,
       isEditing: false,
     }
   },

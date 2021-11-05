@@ -5,7 +5,7 @@
   >
     <li class="flex">
       <a
-        @click="sendEditCard()"
+        @click="this.$emit('start-edit-card')"
         class="flex items-center px-3 py-2.5 mb-1.5 bg-black bg-opacity-60 hover:bg-opacity-100 rounded transform hover:translate-x-1 transition duration-75 ease-in"
       >
         <svg class="w-4 h-4 mr-1.5" viewBox="0 0 20 20">
@@ -24,7 +24,7 @@
 
     <li class="flex">
       <a
-        @click="sendDeleteCard()"
+        @click="this.$emit('start-delete-card')"
         class="flex items-center px-3 py-2.5 mb-1.5 bg-black bg-opacity-60 hover:bg-opacity-100 rounded transform hover:translate-x-1 transition duration-75 ease-in"
       >
         <svg class="w-4 h-4 mr-1.5" viewBox="0 0 20 20">
@@ -47,7 +47,7 @@
 
     <li class="flex">
       <a
-        @click="hidePoppup()"
+        @click="this.$emit('close-popup')"
         class="flex items-center px-3 py-2.5 mb-1.5 bg-black bg-opacity-60 hover:bg-opacity-100 rounded transform hover:translate-x-1 transition duration-75 ease-in"
       >
         <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
@@ -59,26 +59,3 @@
     </li>
   </ul>
 </template>
-
-
-
-<script>
-export default {
-  // METHODS
-  methods: {
-     hidePoppup() {
-       this.$emit('close-popup')
-     },
-
-
-     sendEditCard() {
-       this.$emit('start-edit-card')
-     },
-
-
-     sendDeleteCard() {
-       this.$emit('start-delete-card')
-     },
-  },
-}
-</script>
