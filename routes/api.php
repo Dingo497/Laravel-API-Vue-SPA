@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CardController;
 use App\Http\Controllers\TodoListController;
 
@@ -16,9 +17,15 @@ use App\Http\Controllers\TodoListController;
 |
 */
 
-// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+// Route::middleware('auth:sanctum')->get('/profile', function (Request $request) {
 //     return $request->user();
 // });
+
+Route::post('/register', [AuthController::class, 'register'])->name('register');
+
+Route::post('/login', [AuthController::class, 'login'])->name('login');
+
+Route::post('/profile', [AuthController::class, 'profile'])->middleware('auth:sanctum')->name('profile');
 
 Route::resource('todo-lists', TodoListController::class)->only([
     'index', 'show', 'store', 'update', 'destroy'
