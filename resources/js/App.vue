@@ -1,5 +1,14 @@
 <template>
-  <main class="flex min-h-screen bg-purple-500 lg:bg-gradient-to-r from-red-400 to-pink">
+
+  <AuthForm 
+    v-if="!loggedIn"
+    @auth-successfully="showMainContent($event)"
+  />
+
+  <main 
+    v-if="loggedIn"
+    class="flex min-h-screen background"
+  >
     <transition-group 
       tag="div" 
       name="list" 
@@ -21,13 +30,15 @@
           @delete-card="getListsFromDatabase()"
           :name="list.name" 
           :id="list.id" 
-          :cards="list.cards" 
+          :cards="list.cards"
+          :accessToken="accessToken"
         />
       </ul>
 
       <ListCreateForm 
         @list-create="getListsFromDatabase()" 
         key="-1" 
+        :accessToken="accessToken"
       />
 
     </transition-group>
@@ -46,6 +57,7 @@
 import List from './components/List.vue'
 import ListCreateForm from './components/ListCreateForm.vue'
 import ShowAlert from './components/ShowAlert.vue';
+import AuthForm from './components/auth/AuthForm.vue';
 
 export default {
   // COMPONENTS
@@ -53,14 +65,7 @@ export default {
     List,
     ListCreateForm,
     ShowAlert,
-  },
-
-
-  // MOUNTED APP
-  mounted() {
-    this.getListsFromDatabase()
-
-    window.mitter.on('toggle-overlay', event => this.overlay = event)
+    AuthForm,
   },
 
 
@@ -68,40 +73,38 @@ export default {
   data() {
     return {
       lists: [],
-      overlay: false
+      overlay: false,
+      loggedIn: false,
+      accessToken: {},
     }
   },
 
 
   // METHODS
   methods: {
+    showMainContent(accessToken) {
+      this.accessToken = accessToken
+      this.getListsFromDatabase()
+      this.loggedIn = true
+      window.mitter.on('toggle-overlay', event => this.overlay = event)
+    },
+
     /**
      * Get Lists from database
      */
     getListsFromDatabase() {
       axios
-        .get('http://127.0.0.1:8000/api/todo-lists')
+        .get('http://127.0.0.1:8000/api/todo-lists', {
+          headers: {
+            Authorization: this.accessToken.token_type + ' ' + this.accessToken.access_token
+          }
+        })
         .then((response) => {
           this.lists = response.data.body
         })
         .catch((error) => {
           window.mitter.emit('show-alert', { message: error.response.data.status.message, status: false })
         })
-    },
-
-
-    editCardInDatabase(data) {
-      axios
-        .patch('http://127.0.0.1:8000/api/cards/' + data.id + '?title=' + data.text + '&todo_list_id=' + data.todo_list_id)
-        .then((response) => {
-          window.mitter.emit('show-alert', response.data.status.message)
-          /** DOROBIT */
-        })
-        .catch((error) => {
-          window.mitter.emit('show-alert', error.response.data)
-          /** DOROBIT */
-        })
-      this.getListsFromDatabase()
     },
   }
 
@@ -125,4 +128,5 @@ export default {
 #overlay {
   transform: scale(1);
 }
+
 </style>

@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Card;
 use Illuminate\Http\Request;
-use App\Http\Traits\CrudListsCards;
+use App\Http\Traits\CustomMethods;
 
 class CardController extends Controller
 {
-  use CrudListsCards;
+  use CustomMethods;
 
   /**
    * Display a cards of the resource.

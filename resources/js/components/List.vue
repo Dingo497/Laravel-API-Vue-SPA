@@ -55,13 +55,15 @@
         :idList="id"
         @card-edit="this.$emit('card-edit')"
         @delete-card="this.$emit('delete-card')"
+        :accessToken="accessToken"
       />
     </ul>
     
     <CardCreateForm 
       key="-1" 
       @card-create="this.$emit('card-create')" 
-      :listId="id" 
+      :listId="id"
+      :accessToken="accessToken"
     />
   </transition-group>
 </template>
@@ -93,6 +95,9 @@ export default {
     cards: {
       type: Array,
     },
+    accessToken: {
+      type: Object,
+    }
   },
 
 
@@ -128,7 +133,11 @@ export default {
       if(!confirm('Are you sure about it?')) return
       else {
         axios
-          .delete('http://127.0.0.1:8000/api/todo-lists/' + this.id)
+          .delete('http://127.0.0.1:8000/api/todo-lists/' + this.id, {
+            headers: {
+              Authorization: this.accessToken.token_type + ' ' + this.accessToken.access_token
+            }
+          })
           .then((response) => {
             window.mitter.emit('show-alert', { message: response.data.status.message, status: true })
           })
@@ -154,8 +163,14 @@ export default {
          return
       }
 
-      axios
-        .patch('http://127.0.0.1:8000/api/todo-lists/' + this.id + '?title=' + this.$refs.nameList.textContent)
+      axios 
+        .patch('http://127.0.0.1:8000/api/todo-lists/' + this.id, {
+          title: this.$refs.nameList.textContent,
+        },{
+          headers: {
+            Authorization: this.accessToken.token_type + ' ' + this.accessToken.access_token
+          }
+        })
         .then((response) => {
           window.mitter.emit('show-alert', { message: response.data.status.message, status: true })
         })

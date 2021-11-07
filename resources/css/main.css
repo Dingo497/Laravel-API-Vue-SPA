@@ -1447,6 +1447,10 @@ video {
 	padding-bottom: 0.75rem;
 }
 
+.background {
+	background: radial-gradient(#009345, #106B4E);
+}
+
 
 /* add animations */
 /* buzz */

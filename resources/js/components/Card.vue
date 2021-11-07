@@ -70,6 +70,9 @@ export default {
     idList: {
       type: Number,
     },
+    accessToken: {
+      type: Object,
+    }
   },
 
 
@@ -123,7 +126,14 @@ export default {
       }
       
       axios
-        .patch('http://127.0.0.1:8000/api/cards/' + this.id + '?title=' + this.$refs.textCard.textContent + '&todo_list_id=' + this.idList)
+        .patch('http://127.0.0.1:8000/api/cards/' + this.id , {
+          title: this.$refs.textCard.textContent,
+          todo_list_id: this.idList,
+        },{
+          headers: {
+            Authorization: this.accessToken.token_type + ' ' + this.accessToken.access_token
+          }
+        })
         .then((response) => {
           window.mitter.emit('show-alert', { message: response.data.status.message, status: true })
         })
@@ -146,7 +156,11 @@ export default {
       if(!confirm('Are you sure about it?')) this.undoPop()
       else {
         axios
-          .delete('http://127.0.0.1:8000/api/cards/' + this.id)
+          .delete('http://127.0.0.1:8000/api/cards/' + this.id, {
+            headers: {
+              Authorization: this.accessToken.token_type + ' ' + this.accessToken.access_token
+            }
+          })
           .then((response) => {
             window.mitter.emit('show-alert', { message: response.data.status.message, status: true })
           })

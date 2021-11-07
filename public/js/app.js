@@ -19163,7 +19163,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _components_List_vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./components/List.vue */ "./resources/js/components/List.vue");
 /* harmony import */ var _components_ListCreateForm_vue__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./components/ListCreateForm.vue */ "./resources/js/components/ListCreateForm.vue");
 /* harmony import */ var _components_ShowAlert_vue__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./components/ShowAlert.vue */ "./resources/js/components/ShowAlert.vue");
+/* harmony import */ var _components_auth_AuthForm_vue__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./components/auth/AuthForm.vue */ "./resources/js/components/auth/AuthForm.vue");
 // IMPORTS
+
 
 
 
@@ -19172,33 +19174,42 @@ __webpack_require__.r(__webpack_exports__);
   components: {
     List: _components_List_vue__WEBPACK_IMPORTED_MODULE_0__["default"],
     ListCreateForm: _components_ListCreateForm_vue__WEBPACK_IMPORTED_MODULE_1__["default"],
-    ShowAlert: _components_ShowAlert_vue__WEBPACK_IMPORTED_MODULE_2__["default"]
-  },
-  // MOUNTED APP
-  mounted: function mounted() {
-    var _this = this;
-
-    this.getListsFromDatabase();
-    window.mitter.on('toggle-overlay', function (event) {
-      return _this.overlay = event;
-    });
+    ShowAlert: _components_ShowAlert_vue__WEBPACK_IMPORTED_MODULE_2__["default"],
+    AuthForm: _components_auth_AuthForm_vue__WEBPACK_IMPORTED_MODULE_3__["default"]
   },
   // DATAS
   data: function data() {
     return {
       lists: [],
-      overlay: false
+      overlay: false,
+      loggedIn: false,
+      accessToken: {}
     };
   },
   // METHODS
   methods: {
+    showMainContent: function showMainContent(accessToken) {
+      var _this = this;
+
+      this.accessToken = accessToken;
+      this.getListsFromDatabase();
+      this.loggedIn = true;
+      window.mitter.on('toggle-overlay', function (event) {
+        return _this.overlay = event;
+      });
+    },
+
     /**
      * Get Lists from database
      */
     getListsFromDatabase: function getListsFromDatabase() {
       var _this2 = this;
 
-      axios.get('http://127.0.0.1:8000/api/todo-lists').then(function (response) {
+      axios.get('http://127.0.0.1:8000/api/todo-lists', {
+        headers: {
+          Authorization: this.accessToken.token_type + ' ' + this.accessToken.access_token
+        }
+      }).then(function (response) {
         _this2.lists = response.data.body;
       })["catch"](function (error) {
         window.mitter.emit('show-alert', {
@@ -19206,16 +19217,6 @@ __webpack_require__.r(__webpack_exports__);
           status: false
         });
       });
-    },
-    editCardInDatabase: function editCardInDatabase(data) {
-      axios.patch('http://127.0.0.1:8000/api/cards/' + data.id + '?title=' + data.text + '&todo_list_id=' + data.todo_list_id).then(function (response) {
-        window.mitter.emit('show-alert', response.data.status.message);
-        /** DOROBIT */
-      })["catch"](function (error) {
-        window.mitter.emit('show-alert', error.response.data);
-        /** DOROBIT */
-      });
-      this.getListsFromDatabase();
     }
   }
 });
@@ -19253,6 +19254,9 @@ __webpack_require__.r(__webpack_exports__);
     },
     idList: {
       type: Number
+    },
+    accessToken: {
+      type: Object
     }
   },
   // DATAS
@@ -19298,7 +19302,14 @@ __webpack_require__.r(__webpack_exports__);
         return;
       }
 
-      axios.patch('http://127.0.0.1:8000/api/cards/' + this.id + '?title=' + this.$refs.textCard.textContent + '&todo_list_id=' + this.idList).then(function (response) {
+      axios.patch('http://127.0.0.1:8000/api/cards/' + this.id, {
+        title: this.$refs.textCard.textContent,
+        todo_list_id: this.idList
+      }, {
+        headers: {
+          Authorization: this.accessToken.token_type + ' ' + this.accessToken.access_token
+        }
+      }).then(function (response) {
         window.mitter.emit('show-alert', {
           message: response.data.status.message,
           status: true
@@ -19321,7 +19332,11 @@ __webpack_require__.r(__webpack_exports__);
      */
     deleteCardFromDatabase: function deleteCardFromDatabase() {
       if (!confirm('Are you sure about it?')) this.undoPop();else {
-        axios["delete"]('http://127.0.0.1:8000/api/cards/' + this.id).then(function (response) {
+        axios["delete"]('http://127.0.0.1:8000/api/cards/' + this.id, {
+          headers: {
+            Authorization: this.accessToken.token_type + ' ' + this.accessToken.access_token
+          }
+        }).then(function (response) {
           window.mitter.emit('show-alert', {
             message: response.data.status.message,
             status: true
@@ -19360,6 +19375,9 @@ __webpack_require__.r(__webpack_exports__);
   props: {
     listId: {
       type: Number
+    },
+    accessToken: {
+      type: Object
     }
   },
   // DATA
@@ -19396,7 +19414,14 @@ __webpack_require__.r(__webpack_exports__);
         return;
       }
 
-      axios.post('http://127.0.0.1:8000/api/cards?title=' + this.text + '&todo_list_id=' + this.listId).then(function (response) {
+      axios.post('http://127.0.0.1:8000/api/cards', {
+        title: this.text,
+        todo_list_id: this.listId
+      }, {
+        headers: {
+          Authorization: this.accessToken.token_type + ' ' + this.accessToken.access_token
+        }
+      }).then(function (response) {
         window.mitter.emit('show-alert', {
           message: response.data.status.message,
           status: true
@@ -19450,6 +19475,9 @@ __webpack_require__.r(__webpack_exports__);
     },
     cards: {
       type: Array
+    },
+    accessToken: {
+      type: Object
     }
   },
   // DATA
@@ -19479,7 +19507,11 @@ __webpack_require__.r(__webpack_exports__);
      */
     deleteListFromDatabase: function deleteListFromDatabase() {
       if (!confirm('Are you sure about it?')) return;else {
-        axios["delete"]('http://127.0.0.1:8000/api/todo-lists/' + this.id).then(function (response) {
+        axios["delete"]('http://127.0.0.1:8000/api/todo-lists/' + this.id, {
+          headers: {
+            Authorization: this.accessToken.token_type + ' ' + this.accessToken.access_token
+          }
+        }).then(function (response) {
           window.mitter.emit('show-alert', {
             message: response.data.status.message,
             status: true
@@ -19507,7 +19539,13 @@ __webpack_require__.r(__webpack_exports__);
         return;
       }
 
-      axios.patch('http://127.0.0.1:8000/api/todo-lists/' + this.id + '?title=' + this.$refs.nameList.textContent).then(function (response) {
+      axios.patch('http://127.0.0.1:8000/api/todo-lists/' + this.id, {
+        title: this.$refs.nameList.textContent
+      }, {
+        headers: {
+          Authorization: this.accessToken.token_type + ' ' + this.accessToken.access_token
+        }
+      }).then(function (response) {
         window.mitter.emit('show-alert', {
           message: response.data.status.message,
           status: true
@@ -19542,6 +19580,12 @@ __webpack_require__.r(__webpack_exports__);
 // IMPORTS
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
+  // PROPS
+  props: {
+    accessToken: {
+      type: Object
+    }
+  },
   // DATA
   data: function data() {
     return {
@@ -19562,7 +19606,13 @@ __webpack_require__.r(__webpack_exports__);
         return;
       }
 
-      axios.post('http://127.0.0.1:8000/api/todo-lists?title=' + this.name).then(function (response) {
+      axios.post('http://127.0.0.1:8000/api/todo-lists', {
+        title: this.name
+      }, {
+        headers: {
+          Authorization: this.accessToken.token_type + ' ' + this.accessToken.access_token
+        }
+      }).then(function (response) {
         window.mitter.emit('show-alert', {
           message: response.data.status.message,
           status: true
@@ -19619,6 +19669,386 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/AuthForm.vue?vue&type=script&lang=js":
+/*!*******************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/AuthForm.vue?vue&type=script&lang=js ***!
+  \*******************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _RegisterForm_vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./RegisterForm.vue */ "./resources/js/components/auth/RegisterForm.vue");
+/* harmony import */ var _LoginForm_vue__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./LoginForm.vue */ "./resources/js/components/auth/LoginForm.vue");
+
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
+  components: {
+    RegisterForm: _RegisterForm_vue__WEBPACK_IMPORTED_MODULE_0__["default"],
+    LoginForm: _LoginForm_vue__WEBPACK_IMPORTED_MODULE_1__["default"]
+  },
+  data: function data() {
+    return {
+      progress: '0%',
+      showFinalMessage: false,
+      responseMessage: '',
+      userLoginData: {},
+      visible: true
+    };
+  },
+  methods: {
+    register: function register(data) {
+      var _this = this;
+
+      axios.post('http://127.0.0.1:8000/api/register' + '?name=' + data.username + '&email=' + data.email + '&password=' + data.password).then(function (response) {
+        _this.showFinalMessage = data.visible;
+        _this.responseMessage = response.data.status.message + ', ' + data.username;
+        setTimeout(function () {
+          _this.$emit('auth-successfully', response.data.body);
+        }, 3000);
+      })["catch"](function (error) {
+        _this.showFinalMessage = data.visible;
+        _this.responseMessage = error.response.data.status.message;
+        setTimeout(function () {
+          _this.showFinalMessage = false;
+          _this.visible = true;
+        }, 3000);
+      });
+    },
+    login: function login(data) {
+      var _this2 = this;
+
+      axios.post('http://127.0.0.1:8000/api/login' + '?email=' + data.email + '&password=' + data.password).then(function (response) {
+        _this2.showFinalMessage = data.visible;
+        _this2.responseMessage = response.data.status.message + ', ' + data.email;
+        setTimeout(function () {
+          _this2.$emit('auth-successfully', response.data.body);
+        }, 3000);
+      })["catch"](function (error) {
+        _this2.showFinalMessage = data.visible;
+        _this2.responseMessage = error.response.data.status.message;
+        setTimeout(function () {
+          _this2.showFinalMessage = false;
+          _this2.visible = false;
+        }, 3000);
+      });
+    }
+  }
+});
+
+/***/ }),
+
+/***/ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/LoginForm.vue?vue&type=script&lang=js":
+/*!********************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/LoginForm.vue?vue&type=script&lang=js ***!
+  \********************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
+  // DATAS
+  data: function data() {
+    return {
+      position: 0,
+      inputLabel: '',
+      inputType: 'text',
+      inputValue: '',
+      showContainer: false,
+      progress: '0%',
+      loginSteps: [{
+        label: "What's your email?",
+        type: "text",
+        value: "",
+        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      }, {
+        label: "What's your password",
+        type: "password",
+        value: "",
+        pattern: /.+/
+      }]
+    };
+  },
+  // MOUNTED
+  // start animated form
+  mounted: function mounted() {
+    this.setStep();
+  },
+  // METHODS
+  methods: {
+    /**
+     * Set what step to do from array of loginSteps based on position.
+     * Start with position 0 so start with user name
+     * then showStep
+     */
+    setStep: function setStep() {
+      this.inputLabel = this.loginSteps[this.position].label;
+      this.inputType = this.loginSteps[this.position].type;
+      this.inputValue = this.loginSteps[this.position].value;
+      this.$refs.logininput.focus();
+      this.showStep();
+    },
+
+    /**
+     * Show showContainer
+     * then program waiting for input
+     */
+    showStep: function showStep() {
+      var _this = this;
+
+      setTimeout(function () {
+        _this.showContainer = true;
+      }, 100);
+    },
+
+    /**
+     * After submit form check if inputs are valid on based pattern
+     * if no set add class on wrong animation
+     * if yes set class on ok animation and input from form is saved into loginSteps
+     * and the position increases by one
+     * then if loginSteps have current position, then hide actual step and set then show new one
+     * else hide step add close class and send data to AuthForm.vue
+     * then set progress
+     */
+    checkStep: function checkStep() {
+      var _this2 = this;
+
+      if (!this.loginSteps[this.position].pattern.test(this.inputValue)) {
+        login.classList.add('wrong');
+        login.classList.add('wronganimation');
+        setTimeout(function () {
+          login.classList.remove('wronganimation');
+        }, 500);
+        this.$refs.logininput.focus();
+      } else {
+        login.className = '';
+        login.classList.add('okanimation');
+        setTimeout(function () {
+          login.classList.remove('okanimation');
+        }, 200);
+        this.loginSteps[this.position].value = this.inputValue;
+        this.position += 1;
+
+        if (this.loginSteps[this.position]) {
+          this.hideStep(this.setStep);
+        } else {
+          this.hideStep(function () {
+            login.className = 'close';
+
+            _this2.$emit('show-final-login', {
+              'visible': true,
+              email: _this2.loginSteps[0].value,
+              password: _this2.loginSteps[1].value
+            });
+          });
+          setTimeout(function () {
+            login.className = '';
+            _this2.position = 0;
+
+            _this2.setProgress();
+
+            _this2.setStep();
+          }, 3300);
+        }
+      }
+
+      this.setProgress();
+    },
+
+    /**
+     * Hide current step/container and after timeout do a callback
+     */
+    hideStep: function hideStep(callback) {
+      this.showContainer = false;
+      setTimeout(callback, 100);
+    },
+
+    /**
+     * Do a previous step set up position one less and set new progress
+     */
+    previousStep: function previousStep() {
+      this.position -= 1;
+      login.className = '';
+      this.hideStep(this.setStep);
+      this.setProgress();
+    },
+
+    /**
+     * Set progress on based position / all items in array loginSteps * 100
+     * for example step 2: 1/3 * 100 = 33,33% and send it to AuthForm.vue
+     */
+    setProgress: function setProgress() {
+      this.progress = this.position / this.loginSteps.length * 100 + '%';
+      this.$emit('set-progress', this.progress);
+    }
+  }
+});
+
+/***/ }),
+
+/***/ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/RegisterForm.vue?vue&type=script&lang=js":
+/*!***********************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/RegisterForm.vue?vue&type=script&lang=js ***!
+  \***********************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
+  // DATAS
+  data: function data() {
+    return {
+      position: 0,
+      inputLabel: '',
+      inputType: 'text',
+      inputValue: '',
+      showContainer: false,
+      progress: '0%',
+      registerSteps: [{
+        label: "What's your Name?",
+        type: "text",
+        value: "",
+        pattern: /.+/
+      }, {
+        label: "What's your email?",
+        type: "text",
+        value: "",
+        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      }, {
+        label: "Create your password",
+        type: "password",
+        value: "",
+        pattern: /.+/
+      }]
+    };
+  },
+  // MOUNTED
+  // start animated form
+  mounted: function mounted() {
+    this.setStep();
+  },
+  // METHODS
+  methods: {
+    /**
+     * Set what step to do from array of registerSteps based on position.
+     * Start with position 0 so start with user name
+     * then showStep
+     */
+    setStep: function setStep() {
+      this.inputLabel = this.registerSteps[this.position].label;
+      this.inputType = this.registerSteps[this.position].type;
+      this.inputValue = this.registerSteps[this.position].value;
+      this.$refs.registerinput.focus();
+      this.showStep();
+    },
+
+    /**
+     * Show showContainer
+     * then program waiting for input
+     */
+    showStep: function showStep() {
+      var _this = this;
+
+      setTimeout(function () {
+        _this.showContainer = true;
+      }, 100);
+    },
+
+    /**
+     * After submit form check if inputs are valid on based pattern
+     * if no set add class on wrong animation
+     * if yes set class on ok animation and input from form is saved into registerSteps
+     * and the position increases by one
+     * then if registerSteps have current position, then hide actual step and set then show new one
+     * else hide step add close class and send data to AuthForm.vue
+     * then set progress
+     * if in last step error try again...
+     */
+    checkStep: function checkStep() {
+      var _this2 = this;
+
+      if (!this.registerSteps[this.position].pattern.test(this.inputValue)) {
+        register.classList.add('wrong');
+        register.classList.add('wronganimation');
+        setTimeout(function () {
+          register.classList.remove('wronganimation');
+        }, 500);
+        this.$refs.registerinput.focus();
+      } else {
+        register.className = '';
+        register.classList.add('okanimation');
+        setTimeout(function () {
+          register.classList.remove('okanimation');
+        }, 200);
+        this.registerSteps[this.position].value = this.inputValue;
+        this.position += 1;
+
+        if (this.registerSteps[this.position]) {
+          this.hideStep(this.setStep);
+        } else {
+          this.hideStep(function () {
+            register.className = 'close';
+
+            _this2.$emit('show-final-register', {
+              'visible': true,
+              username: _this2.registerSteps[0].value,
+              email: _this2.registerSteps[1].value,
+              password: _this2.registerSteps[2].value
+            });
+          });
+          setTimeout(function () {
+            register.className = '';
+            _this2.position = 0;
+
+            _this2.setProgress();
+
+            _this2.setStep();
+          }, 3300);
+        }
+      }
+
+      this.setProgress();
+    },
+
+    /**
+     * Hide current step/container and after timeout do a callback
+     */
+    hideStep: function hideStep(callback) {
+      this.showContainer = false;
+      setTimeout(callback, 100);
+    },
+
+    /**
+     * Do a previous step set up position one less and set new progress
+     */
+    previousStep: function previousStep() {
+      this.position -= 1;
+      register.className = '';
+      this.hideStep(this.setStep);
+      this.setProgress();
+    },
+
+    /**
+     * Set progress on based position / all items in array registerSteps * 100
+     * for example step 2: 1/3 * 100 = 33,33% and send it to AuthForm.vue
+     */
+    setProgress: function setProgress() {
+      this.progress = this.position / this.registerSteps.length * 100 + '%';
+      this.$emit('set-progress', this.progress);
+    }
+  }
+});
+
+/***/ }),
+
 /***/ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/App.vue?vue&type=template&id=f348271a&scoped=true":
 /*!**************************************************************************************************************************************************************************************************************************************************************************!*\
   !*** ./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/App.vue?vue&type=template&id=f348271a&scoped=true ***!
@@ -19638,7 +20068,8 @@ var _withScopeId = function _withScopeId(n) {
 };
 
 var _hoisted_1 = {
-  "class": "flex min-h-screen bg-purple-500 lg:bg-gradient-to-r from-red-400 to-pink"
+  key: 1,
+  "class": "flex min-h-screen background"
 };
 var _hoisted_2 = {
   id: "overlay",
@@ -19646,13 +20077,20 @@ var _hoisted_2 = {
   key: "0"
 };
 function render(_ctx, _cache, $props, $setup, $data, $options) {
+  var _component_AuthForm = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("AuthForm");
+
   var _component_List = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("List");
 
   var _component_ListCreateForm = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("ListCreateForm");
 
   var _component_ShowAlert = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("ShowAlert");
 
-  return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("main", _hoisted_1, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(vue__WEBPACK_IMPORTED_MODULE_0__.TransitionGroup, {
+  return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, [!$data.loggedIn ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_AuthForm, {
+    key: 0,
+    onAuthSuccessfully: _cache[0] || (_cache[0] = function ($event) {
+      return $options.showMainContent($event);
+    })
+  })) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $data.loggedIn ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("main", _hoisted_1, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(vue__WEBPACK_IMPORTED_MODULE_0__.TransitionGroup, {
     tag: "div",
     name: "list",
     "class": "sm:flex items-start w-screen px-4 py-10 overflow-x-auto"
@@ -19662,40 +20100,44 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("ul", {
           key: list.id
         }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_List, {
-          onListDelete: _cache[0] || (_cache[0] = function ($event) {
+          onListDelete: _cache[1] || (_cache[1] = function ($event) {
             return $options.getListsFromDatabase();
           }),
-          onCardCreate: _cache[1] || (_cache[1] = function ($event) {
+          onCardCreate: _cache[2] || (_cache[2] = function ($event) {
             return $options.getListsFromDatabase();
           }),
-          onListTitleEdit: _cache[2] || (_cache[2] = function ($event) {
+          onListTitleEdit: _cache[3] || (_cache[3] = function ($event) {
             return $options.getListsFromDatabase();
           }),
-          onCardEdit: _cache[3] || (_cache[3] = function ($event) {
+          onCardEdit: _cache[4] || (_cache[4] = function ($event) {
             return $options.getListsFromDatabase();
           }),
-          onDeleteCard: _cache[4] || (_cache[4] = function ($event) {
+          onDeleteCard: _cache[5] || (_cache[5] = function ($event) {
             return $options.getListsFromDatabase();
           }),
           name: list.name,
           id: list.id,
-          cards: list.cards
+          cards: list.cards,
+          accessToken: $data.accessToken
         }, null, 8
         /* PROPS */
-        , ["name", "id", "cards"])]);
+        , ["name", "id", "cards", "accessToken"])]);
       }), 128
       /* KEYED_FRAGMENT */
       )), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_ListCreateForm, {
-        onListCreate: _cache[5] || (_cache[5] = function ($event) {
+        onListCreate: _cache[6] || (_cache[6] = function ($event) {
           return $options.getListsFromDatabase();
         }),
-        key: "-1"
-      })];
+        key: "-1",
+        accessToken: $data.accessToken
+      }, null, 8
+      /* PROPS */
+      , ["accessToken"])];
     }),
     _: 1
     /* STABLE */
 
-  })]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(vue__WEBPACK_IMPORTED_MODULE_0__.Transition, {
+  })])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(vue__WEBPACK_IMPORTED_MODULE_0__.Transition, {
     name: "list"
   }, {
     "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
@@ -20077,10 +20519,11 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           }),
           onDeleteCard: _cache[5] || (_cache[5] = function ($event) {
             return _this.$emit('delete-card');
-          })
+          }),
+          accessToken: $props.accessToken
         }, null, 8
         /* PROPS */
-        , ["title", "id", "idList"]), [[vue__WEBPACK_IMPORTED_MODULE_0__.vShow, card]])]);
+        , ["title", "id", "idList", "accessToken"]), [[vue__WEBPACK_IMPORTED_MODULE_0__.vShow, card]])]);
       }), 128
       /* KEYED_FRAGMENT */
       )), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_CardCreateForm, {
@@ -20088,10 +20531,11 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         onCardCreate: _cache[6] || (_cache[6] = function ($event) {
           return _this.$emit('card-create');
         }),
-        listId: $props.id
+        listId: $props.id,
+        accessToken: $props.accessToken
       }, null, 8
       /* PROPS */
-      , ["listId"])];
+      , ["listId", "accessToken"])];
     }),
     _: 1
     /* STABLE */
@@ -20167,6 +20611,280 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
   )], 2
   /* CLASS */
   )) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true);
+}
+
+/***/ }),
+
+/***/ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/AuthForm.vue?vue&type=template&id=0165cd10&scoped=true":
+/*!***********************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/AuthForm.vue?vue&type=template&id=0165cd10&scoped=true ***!
+  \***********************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.esm-bundler.js");
+
+
+var _withScopeId = function _withScopeId(n) {
+  return (0,vue__WEBPACK_IMPORTED_MODULE_0__.pushScopeId)("data-v-0165cd10"), n = n(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.popScopeId)(), n;
+};
+
+var _hoisted_1 = {
+  "class": "container"
+};
+function render(_ctx, _cache, $props, $setup, $data, $options) {
+  var _component_RegisterForm = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("RegisterForm");
+
+  var _component_LoginForm = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("LoginForm");
+
+  return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_1, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+    id: "progress",
+    style: (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeStyle)({
+      width: _ctx.progress
+    })
+  }, null, 4
+  /* STYLE */
+  ), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("h1", {
+    "class": (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)({
+      'show-final': _ctx.showFinalMessage
+    })
+  }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(_ctx.responseMessage), 3
+  /* TEXT, CLASS */
+  ), _ctx.visible ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_RegisterForm, {
+    key: 0,
+    onSetProgress: _cache[0] || (_cache[0] = function ($event) {
+      return _ctx.progress = $event;
+    }),
+    onShowFinalRegister: _cache[1] || (_cache[1] = function ($event) {
+      return $options.register($event);
+    }),
+    onShowLogin: _cache[2] || (_cache[2] = function ($event) {
+      return _ctx.visible = false;
+    })
+  })) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), !_ctx.visible ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_LoginForm, {
+    key: 1,
+    onShowRegister: _cache[3] || (_cache[3] = function ($event) {
+      return _ctx.visible = true;
+    }),
+    onShowFinalLogin: _cache[4] || (_cache[4] = function ($event) {
+      return $options.login($event);
+    }),
+    onSetProgress: _cache[5] || (_cache[5] = function ($event) {
+      return _ctx.progress = $event;
+    })
+  })) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]);
+}
+
+/***/ }),
+
+/***/ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/LoginForm.vue?vue&type=template&id=5547a011&scoped=true":
+/*!************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/LoginForm.vue?vue&type=template&id=5547a011&scoped=true ***!
+  \************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.esm-bundler.js");
+
+
+var _withScopeId = function _withScopeId(n) {
+  return (0,vue__WEBPACK_IMPORTED_MODULE_0__.pushScopeId)("data-v-5547a011"), n = n(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.popScopeId)(), n;
+};
+
+var _hoisted_1 = {
+  id: "login"
+};
+var _hoisted_2 = {
+  key: 0,
+  "class": "previousButton fas fa-user"
+};
+
+var _hoisted_3 = /*#__PURE__*/_withScopeId(function () {
+  return /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("h2", {
+    "class": "FormLabel"
+  }, "Login", -1
+  /* HOISTED */
+  );
+});
+
+var _hoisted_4 = ["type"];
+var _hoisted_5 = {
+  id: "inputLabel"
+};
+
+var _hoisted_6 = /*#__PURE__*/_withScopeId(function () {
+  return /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("small", null, "Don't have an account yet?", -1
+  /* HOISTED */
+  );
+});
+
+var _hoisted_7 = [_hoisted_6];
+
+var _hoisted_8 = /*#__PURE__*/_withScopeId(function () {
+  return /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+    id: "inputProgress"
+  }, null, -1
+  /* HOISTED */
+  );
+});
+
+function render(_ctx, _cache, $props, $setup, $data, $options) {
+  var _this = this;
+
+  return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_1, [$data.position === 0 ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("i", _hoisted_2)) : ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("i", {
+    key: 1,
+    "class": "previousButton fas fa-arrow-left",
+    onClick: _cache[0] || (_cache[0] = function () {
+      return $options.previousStep && $options.previousStep.apply($options, arguments);
+    })
+  })), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("i", {
+    "class": "forwardButton fas fa-arrow-right",
+    onClick: _cache[1] || (_cache[1] = function () {
+      return $options.checkStep && $options.checkStep.apply($options, arguments);
+    })
+  }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+    id: "inputContainer",
+    "class": (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)({
+      'showContainer': $data.showContainer
+    })
+  }, [_hoisted_3, (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("form", {
+    onSubmit: _cache[3] || (_cache[3] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.withModifiers)(function () {
+      return $options.checkStep && $options.checkStep.apply($options, arguments);
+    }, ["prevent"]))
+  }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("input", {
+    id: "inputField",
+    type: $data.inputType,
+    "onUpdate:modelValue": _cache[2] || (_cache[2] = function ($event) {
+      return $data.inputValue = $event;
+    }),
+    ref: "logininput",
+    required: ""
+  }, null, 8
+  /* PROPS */
+  , _hoisted_4), [[vue__WEBPACK_IMPORTED_MODULE_0__.vModelDynamic, $data.inputValue]]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("label", _hoisted_5, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($data.inputLabel), 1
+  /* TEXT */
+  )], 32
+  /* HYDRATE_EVENTS */
+  ), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("a", {
+    "class": "linkToLogin",
+    onClick: _cache[4] || (_cache[4] = function ($event) {
+      return _this.$emit('show-register');
+    })
+  }, _hoisted_7), _hoisted_8], 2
+  /* CLASS */
+  )]);
+}
+
+/***/ }),
+
+/***/ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/RegisterForm.vue?vue&type=template&id=5d1a151a&scoped=true":
+/*!***************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/RegisterForm.vue?vue&type=template&id=5d1a151a&scoped=true ***!
+  \***************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.esm-bundler.js");
+
+
+var _withScopeId = function _withScopeId(n) {
+  return (0,vue__WEBPACK_IMPORTED_MODULE_0__.pushScopeId)("data-v-5d1a151a"), n = n(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.popScopeId)(), n;
+};
+
+var _hoisted_1 = {
+  id: "register"
+};
+var _hoisted_2 = {
+  key: 0,
+  "class": "previousButton fas fa-user"
+};
+
+var _hoisted_3 = /*#__PURE__*/_withScopeId(function () {
+  return /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("h2", {
+    "class": "FormLabel"
+  }, "Registration", -1
+  /* HOISTED */
+  );
+});
+
+var _hoisted_4 = ["type"];
+var _hoisted_5 = {
+  id: "inputLabel"
+};
+
+var _hoisted_6 = /*#__PURE__*/_withScopeId(function () {
+  return /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("small", null, "Do you already have an account?", -1
+  /* HOISTED */
+  );
+});
+
+var _hoisted_7 = [_hoisted_6];
+
+var _hoisted_8 = /*#__PURE__*/_withScopeId(function () {
+  return /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+    id: "inputProgress"
+  }, null, -1
+  /* HOISTED */
+  );
+});
+
+function render(_ctx, _cache, $props, $setup, $data, $options) {
+  var _this = this;
+
+  return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_1, [$data.position === 0 ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("i", _hoisted_2)) : ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("i", {
+    key: 1,
+    "class": "previousButton fas fa-arrow-left",
+    onClick: _cache[0] || (_cache[0] = function () {
+      return $options.previousStep && $options.previousStep.apply($options, arguments);
+    })
+  })), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("i", {
+    "class": "forwardButton fas fa-arrow-right",
+    onClick: _cache[1] || (_cache[1] = function () {
+      return $options.checkStep && $options.checkStep.apply($options, arguments);
+    })
+  }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+    id: "inputContainer",
+    "class": (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)({
+      'showContainer': $data.showContainer
+    })
+  }, [_hoisted_3, (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("form", {
+    onSubmit: _cache[3] || (_cache[3] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.withModifiers)(function () {
+      return $options.checkStep && $options.checkStep.apply($options, arguments);
+    }, ["prevent"]))
+  }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("input", {
+    id: "inputField",
+    type: $data.inputType,
+    "onUpdate:modelValue": _cache[2] || (_cache[2] = function ($event) {
+      return $data.inputValue = $event;
+    }),
+    ref: "registerinput",
+    required: ""
+  }, null, 8
+  /* PROPS */
+  , _hoisted_4), [[vue__WEBPACK_IMPORTED_MODULE_0__.vModelDynamic, $data.inputValue]]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("label", _hoisted_5, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($data.inputLabel), 1
+  /* TEXT */
+  )], 32
+  /* HYDRATE_EVENTS */
+  ), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("a", {
+    "class": "linkToLogin",
+    onClick: _cache[4] || (_cache[4] = function ($event) {
+      return _this.$emit('show-login');
+    })
+  }, _hoisted_7), _hoisted_8], 2
+  /* CLASS */
+  )]);
 }
 
 /***/ }),
@@ -20296,7 +21014,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "/*! modern-normalize v1.0.0 | MIT License | https://github.com/sindresorhus/modern-normalize */\r\n\r\n/*\r\nDocument\r\n========\r\n*/\r\n\r\n/**\r\nUse a better box model (opinionated).\r\n*/\r\n\r\n*,\r\n*::before,\r\n*::after {\r\n\tbox-sizing: border-box;\r\n}\r\n\r\n/**\r\nUse a more readable tab size (opinionated).\r\n*/\r\n\r\n:root {\r\n\t-moz-tab-size: 4;\r\n\t-o-tab-size: 4;\r\n\ttab-size: 4;\r\n}\r\n\r\n/**\r\n1. Correct the line height in all browsers.\r\n2. Prevent adjustments of font size after orientation changes in iOS.\r\n*/\r\n\r\nhtml {\r\n\tline-height: 1.15; /* 1 */\r\n\t-webkit-text-size-adjust: 100%; /* 2 */\r\n}\r\n\r\n/*\r\nSections\r\n========\r\n*/\r\n\r\n/**\r\nRemove the margin in all browsers.\r\n*/\r\n\r\nbody {\r\n\tmargin: 0;\r\n}\r\n\r\n/**\r\nImprove consistency of default fonts in all browsers. (https://github.com/sindresorhus/modern-normalize/issues/3)\r\n*/\r\n\r\nbody {\r\n\tfont-family: system-ui, -apple-system,\r\n\t\t/* Firefox supports this but not yet `system-ui` */ 'Segoe UI', Roboto, Helvetica, Arial,\r\n\t\tsans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';\r\n}\r\n\r\n/*\r\nGrouping content\r\n================\r\n*/\r\n\r\n/**\r\n1. Add the correct height in Firefox.\r\n2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)\r\n*/\r\n\r\nhr {\r\n\theight: 0; /* 1 */\r\n\tcolor: inherit; /* 2 */\r\n}\r\n\r\n/*\r\nText-level semantics\r\n====================\r\n*/\r\n\r\n/**\r\nAdd the correct text decoration in Chrome, Edge, and Safari.\r\n*/\r\n\r\nabbr[title] {\r\n\t-webkit-text-decoration: underline dotted;\r\n\ttext-decoration: underline dotted;\r\n}\r\n\r\n/**\r\nAdd the correct font weight in Edge and Safari.\r\n*/\r\n\r\nb,\r\nstrong {\r\n\tfont-weight: bolder;\r\n}\r\n\r\n/**\r\n1. Improve consistency of default fonts in all browsers. (https://github.com/sindresorhus/modern-normalize/issues/3)\r\n2. Correct the odd 'em' font sizing in all browsers.\r\n*/\r\n\r\ncode,\r\nkbd,\r\nsamp,\r\npre {\r\n\tfont-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace; /* 1 */\r\n\tfont-size: 1em; /* 2 */\r\n}\r\n\r\n/**\r\nAdd the correct font size in all browsers.\r\n*/\r\n\r\nsmall {\r\n\tfont-size: 80%;\r\n}\r\n\r\n/**\r\nPrevent 'sub' and 'sup' elements from affecting the line height in all browsers.\r\n*/\r\n\r\nsub,\r\nsup {\r\n\tfont-size: 75%;\r\n\tline-height: 0;\r\n\tposition: relative;\r\n\tvertical-align: baseline;\r\n}\r\n\r\nsub {\r\n\tbottom: -0.25em;\r\n}\r\n\r\nsup {\r\n\ttop: -0.5em;\r\n}\r\n\r\n/*\r\nTabular data\r\n============\r\n*/\r\n\r\n/**\r\n1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)\r\n2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)\r\n*/\r\n\r\ntable {\r\n\ttext-indent: 0; /* 1 */\r\n\tborder-color: inherit; /* 2 */\r\n}\r\n\r\n/*\r\nForms\r\n=====\r\n*/\r\n\r\n/**\r\n1. Change the font styles in all browsers.\r\n2. Remove the margin in Firefox and Safari.\r\n*/\r\n\r\nbutton,\r\ninput,\r\noptgroup,\r\nselect,\r\ntextarea {\r\n\tfont-family: inherit; /* 1 */\r\n\tfont-size: 100%; /* 1 */\r\n\tline-height: 1.15; /* 1 */\r\n\tmargin: 0; /* 2 */\r\n}\r\n\r\n/**\r\nRemove the inheritance of text transform in Edge and Firefox.\r\n1. Remove the inheritance of text transform in Firefox.\r\n*/\r\n\r\nbutton,\r\nselect {\r\n\t/* 1 */\r\n\ttext-transform: none;\r\n}\r\n\r\n/**\r\nCorrect the inability to style clickable types in iOS and Safari.\r\n*/\r\n\r\nbutton,\r\n[type='button'] {\r\n\t-webkit-appearance: button;\r\n}\r\n\r\n/**\r\nRemove the inner border and padding in Firefox.\r\n*/\r\n\r\n/**\r\nRestore the focus styles unset by the previous rule.\r\n*/\r\n\r\n/**\r\nRemove the additional ':invalid' styles in Firefox.\r\nSee: https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737\r\n*/\r\n\r\n/**\r\nRemove the padding so developers are not caught out when they zero out 'fieldset' elements in all browsers.\r\n*/\r\n\r\nlegend {\r\n\tpadding: 0;\r\n}\r\n\r\n/**\r\nAdd the correct vertical alignment in Chrome and Firefox.\r\n*/\r\n\r\nprogress {\r\n\tvertical-align: baseline;\r\n}\r\n\r\n/**\r\nCorrect the cursor style of increment and decrement buttons in Safari.\r\n*/\r\n\r\n/**\r\n1. Correct the odd appearance in Chrome and Safari.\r\n2. Correct the outline style in Safari.\r\n*/\r\n\r\n/**\r\nRemove the inner padding in Chrome and Safari on macOS.\r\n*/\r\n\r\n/**\r\n1. Correct the inability to style clickable types in iOS and Safari.\r\n2. Change font properties to 'inherit' in Safari.\r\n*/\r\n\r\n/*\r\nInteractive\r\n===========\r\n*/\r\n\r\n/*\r\nAdd the correct display in Chrome and Safari.\r\n*/\r\n\r\nsummary {\r\n\tdisplay: list-item;\r\n}\r\n\r\n/**\r\n * Manually forked from SUIT CSS Base: https://github.com/suitcss/base\r\n * A thin layer on top of normalize.css that provides a starting point more\r\n * suitable for web applications.\r\n */\r\n\r\n/**\r\n * Removes the default spacing and border for appropriate elements.\r\n */\r\n\r\nblockquote,\r\ndl,\r\ndd,\r\nh1,\r\nh2,\r\nh3,\r\nh4,\r\nh5,\r\nh6,\r\nhr,\r\nfigure,\r\np,\r\npre {\r\n\tmargin: 0;\r\n}\r\n\r\nbutton {\r\n\tbackground-color: transparent;\r\n\tbackground-image: none;\r\n}\r\n\r\n/**\r\n * Work around a Firefox/IE bug where the transparent `button` background\r\n * results in a loss of the default `button` focus styles.\r\n */\r\n\r\nbutton:focus {\r\n\toutline: 1px dotted;\r\n\toutline: 5px auto -webkit-focus-ring-color;\r\n}\r\n\r\nfieldset {\r\n\tmargin: 0;\r\n\tpadding: 0;\r\n}\r\n\r\nol,\r\nul {\r\n\tlist-style: none;\r\n\tmargin: 0;\r\n\tpadding: 0;\r\n}\r\n\r\n/**\r\n * Tailwind custom reset styles\r\n */\r\n\r\n/**\r\n * 1. Use the user's configured `sans` font-family (with Tailwind's default\r\n *    sans-serif font stack as a fallback) as a sane default.\r\n * 2. Use Tailwind's default \"normal\" line-height so the user isn't forced\r\n *    to override it to ensure consistency even when using the default theme.\r\n */\r\n\r\nhtml,\r\nbody {\r\n\tfont-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,\r\n\t\t'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',\r\n\t\t'Segoe UI Symbol', 'Noto Color Emoji'; /* 1 */\r\n\tline-height: 1.5; /* 2 */\r\n}\r\n\r\n/**\r\n * 1. Prevent padding and border from affecting element width.\r\n *\r\n *    We used to set this in the html element and inherit from\r\n *    the parent element for everything else. This caused issues\r\n *    in shadow-dom-enhanced elements like <details> where the content\r\n *    is wrapped by a div with box-sizing set to `content-box`.\r\n *\r\n *    https://github.com/mozdevs/cssremedy/issues/4\r\n *\r\n *\r\n * 2. Allow adding a border to an element by just adding a border-width.\r\n *\r\n *    By default, the way the browser specifies that an element should have no\r\n *    border is by setting it's border-style to `none` in the user-agent\r\n *    stylesheet.\r\n *\r\n *    In order to easily add borders to elements by just setting the `border-width`\r\n *    property, we change the default border-style for all elements to `solid`, and\r\n *    use border-width to hide them instead. This way our `border` utilities only\r\n *    need to set the `border-width` property instead of the entire `border`\r\n *    shorthand, making our border utilities much more straightforward to compose.\r\n *\r\n *    https://github.com/tailwindcss/tailwindcss/pull/116\r\n */\r\n\r\n*,\r\n::before,\r\n::after {\r\n\tbox-sizing: border-box; /* 1 */\r\n\tborder-width: 0; /* 2 */\r\n\tborder-style: solid; /* 2 */\r\n\tborder-color: #e4e4e7; /* 2 */\r\n}\r\n\r\n/*\r\n * Ensure horizontal rules are visible by default\r\n */\r\n\r\nhr {\r\n\tborder-top-width: 1px;\r\n}\r\n\r\n/**\r\n * Undo the `border-style: none` reset that Normalize applies to images so that\r\n * our `border-{width}` utilities have the expected effect.\r\n *\r\n * The Normalize reset is unnecessary for us since we default the border-width\r\n * to 0 on all elements.\r\n *\r\n * https://github.com/tailwindcss/tailwindcss/issues/362\r\n */\r\n\r\nimg {\r\n\tborder-style: solid;\r\n}\r\n\r\ntextarea {\r\n\tresize: vertical;\r\n}\r\n\r\ninput::-moz-placeholder,\r\ntextarea::-moz-placeholder {\r\n\tcolor: #a1a1aa;\r\n}\r\n\r\ninput:-ms-input-placeholder,\r\ntextarea:-ms-input-placeholder {\r\n\tcolor: #a1a1aa;\r\n}\r\n\r\ninput::-moz-placeholder, textarea::-moz-placeholder {\r\n\tcolor: #a1a1aa;\r\n}\r\n\r\ninput:-ms-input-placeholder, textarea:-ms-input-placeholder {\r\n\tcolor: #a1a1aa;\r\n}\r\n\r\ninput::placeholder,\r\ntextarea::placeholder {\r\n\tcolor: #a1a1aa;\r\n}\r\n\r\nbutton {\r\n\tcursor: pointer;\r\n}\r\n\r\ntable {\r\n\tborder-collapse: collapse;\r\n}\r\n\r\nh1,\r\nh2,\r\nh3,\r\nh4,\r\nh5,\r\nh6 {\r\n\tfont-size: inherit;\r\n\tfont-weight: inherit;\r\n}\r\n\r\n/**\r\n * Reset links to optimize for opt-in styling instead of\r\n * opt-out.\r\n */\r\n\r\na {\r\n\tcolor: inherit;\r\n\ttext-decoration: inherit;\r\n}\r\n\r\n/**\r\n * Reset form element properties that are easy to forget to\r\n * style explicitly so you don't inadvertently introduce\r\n * styles that deviate from your design system. These styles\r\n * supplement a partial reset that is already applied by\r\n * normalize.css.\r\n */\r\n\r\nbutton,\r\ninput,\r\noptgroup,\r\nselect,\r\ntextarea {\r\n\tpadding: 0;\r\n\tline-height: inherit;\r\n\tcolor: inherit;\r\n}\r\n\r\n/**\r\n * Use the configured 'mono' font family for elements that\r\n * are expected to be rendered with a monospace font, falling\r\n * back to the system monospace stack if there is no configured\r\n * 'mono' font family.\r\n */\r\n\r\npre,\r\ncode,\r\nkbd,\r\nsamp {\r\n\tfont-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',\r\n\t\t'Courier New', monospace;\r\n}\r\n\r\n/**\r\n * Make replaced elements `display: block` by default as that's\r\n * the behavior you want almost all of the time. Inspired by\r\n * CSS Remedy, with `svg` added as well.\r\n *\r\n * https://github.com/mozdevs/cssremedy/issues/14\r\n */\r\n\r\nimg,\r\nsvg,\r\nvideo,\r\ncanvas,\r\naudio,\r\niframe,\r\nembed,\r\nobject {\r\n\tdisplay: block;\r\n\tvertical-align: middle;\r\n}\r\n\r\n/**\r\n * Constrain images and videos to the parent width and preserve\r\n * their instrinsic aspect ratio.\r\n *\r\n * https://github.com/mozdevs/cssremedy/issues/14\r\n */\r\n\r\nimg,\r\nvideo {\r\n\tmax-width: 100%;\r\n\theight: auto;\r\n}\r\n\r\n/**\r\n\t * CARDS\r\n\t */\r\n\r\n.card {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(255, 255, 255, var(--bg-opacity));\r\n\t--border-opacity: 1;\r\n\tborder-color: rgba(161, 161, 170, var(--border-opacity));\r\n\tborder-radius: 0.25rem;\r\n\tborder-bottom-width: 1px;\r\n\tcursor: pointer;\r\n\tline-height: 1.375;\r\n\tmargin-top: 0.5rem;\r\n\tmargin-bottom: 0.5rem;\r\n}\r\n\r\n/**\r\n* LISTS\r\n*/\r\n\r\n.card:hover {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(244, 244, 245, var(--bg-opacity));\r\n}\r\n\r\n.list {\r\n\t/* size */\r\n\tflex-shrink: 0;\r\n\tmargin-bottom: 2.5rem;\r\n\tpadding: 0.75rem;\r\n\tpadding-bottom: 0.5rem;\r\n\twidth: 100%;\r\n\t/* colors */\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(228, 228, 231, var(--bg-opacity));\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(39, 39, 42, var(--text-opacity));\r\n\t/* special stuff */\r\n\tborder-radius: 0.5rem;\r\n\tbox-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);\r\n}\r\n\r\n/**\r\n* BUTTONS\r\n*/\r\n\r\n.btn {\r\n\t--border-opacity: 1;\r\n\tborder-color: rgba(82, 82, 91, var(--border-opacity));\r\n\tborder-radius: 0.25rem;\r\n\tborder-bottom-width: 1px;\r\n\tfont-weight: 600;\r\n\tpadding-top: 0.25rem;\r\n\tpadding-bottom: 0.25rem;\r\n\tpadding-left: 0.75rem;\r\n\tpadding-right: 0.75rem;\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(255, 255, 255, var(--text-opacity));\r\n\ttext-shadow: 1px 1px 0 rgba(0, 0, 0, 0.35);\r\n}\r\n\r\n.btn-green {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(16, 185, 129, var(--bg-opacity));\r\n}\r\n\r\n.btn-green:hover,\r\n.btn-green:active {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(52, 211, 153, var(--bg-opacity));\r\n}\r\n\r\n@media (min-width: 420px) {\r\n\t.list {\r\n\t\tmargin-left: 1rem;\r\n\t\tmargin-right: 1rem;\r\n\t\tmargin-bottom: 0;\r\n\t\twidth: 20rem;\r\n\t}\r\n}\r\n\r\n.space-y-2 > :not([hidden]) ~ :not([hidden]) {\r\n\t--space-y-reverse: 0;\r\n\tmargin-top: calc(0.5rem * calc(1 - var(--space-y-reverse)));\r\n\tmargin-bottom: calc(0.5rem * var(--space-y-reverse));\r\n}\r\n\r\n.space-y-4 > :not([hidden]) ~ :not([hidden]) {\r\n\t--space-y-reverse: 0;\r\n\tmargin-top: calc(1rem * calc(1 - var(--space-y-reverse)));\r\n\tmargin-bottom: calc(1rem * var(--space-y-reverse));\r\n}\r\n\r\n.divide-y > :not([hidden]) ~ :not([hidden]) {\r\n\t--divide-y-reverse: 0;\r\n\tborder-top-width: calc(1px * calc(1 - var(--divide-y-reverse)));\r\n\tborder-bottom-width: calc(1px * var(--divide-y-reverse));\r\n}\r\n\r\n.divide-gray-200 > :not([hidden]) ~ :not([hidden]) {\r\n\t--divide-opacity: 1;\r\n\tborder-color: rgba(228, 228, 231, var(--divide-opacity));\r\n}\r\n\r\n.bg-black {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(0, 0, 0, var(--bg-opacity));\r\n}\r\n\r\n.bg-white {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(255, 255, 255, var(--bg-opacity));\r\n}\r\n\r\n.bg-gray-500 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(113, 113, 122, var(--bg-opacity));\r\n}\r\n\r\n.bg-red-400 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(248, 113, 113, var(--bg-opacity));\r\n}\r\n\r\n.bg-yellow-300 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(252, 211, 77, var(--bg-opacity));\r\n}\r\n\r\n.bg-yellow-400 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(251, 191, 36, var(--bg-opacity));\r\n}\r\n\r\n.bg-green-300 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(110, 231, 183, var(--bg-opacity));\r\n}\r\n\r\n.bg-green-400 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(52, 211, 153, var(--bg-opacity));\r\n}\r\n\r\n.bg-blue-400 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(96, 165, 250, var(--bg-opacity));\r\n}\r\n\r\n.bg-purple-300 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(196, 181, 253, var(--bg-opacity));\r\n}\r\n\r\n.bg-purple-400 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(167, 139, 250, var(--bg-opacity));\r\n}\r\n\r\n.bg-purple-500 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(139, 92, 246, var(--bg-opacity));\r\n}\r\n\r\n.bg-gradient-to-r {\r\n\tbackground-image: linear-gradient(to right, var(--gradient-color-stops));\r\n}\r\n\r\n.from-red-400 {\r\n\t--gradient-from-color: #f87171;\r\n\t--gradient-color-stops: var(--gradient-from-color),\r\n\t\tvar(--gradient-to-color, rgba(248, 113, 113, 0));\r\n}\r\n\r\n.from-teal-400 {\r\n\t--gradient-from-color: #4fd1c5;\r\n\t--gradient-color-stops: var(--gradient-from-color),\r\n\t\tvar(--gradient-to-color, rgba(79, 209, 197, 0));\r\n}\r\n\r\n.to-blue-400 {\r\n\t--gradient-to-color: #60a5fa;\r\n}\r\n\r\n.to-pink-400 {\r\n\t--gradient-to-color: #f472b6;\r\n}\r\n\r\n.bg-opacity-40 {\r\n\t--bg-opacity: 0.4;\r\n}\r\n\r\n.bg-opacity-60 {\r\n\t--bg-opacity: 0.6;\r\n}\r\n\r\n.bg-opacity-70 {\r\n\t--bg-opacity: 0.7;\r\n}\r\n\r\n.hover\\:bg-opacity-100:hover {\r\n\t--bg-opacity: 1;\r\n}\r\n\r\n.focus\\:bg-opacity-100:focus {\r\n\t--bg-opacity: 1;\r\n}\r\n\r\n.border-gray-200 {\r\n\t--border-opacity: 1;\r\n\tborder-color: rgba(228, 228, 231, var(--border-opacity));\r\n}\r\n\r\n.border-gray-300 {\r\n\t--border-opacity: 1;\r\n\tborder-color: rgba(212, 212, 216, var(--border-opacity));\r\n}\r\n\r\n.rounded {\r\n\tborder-radius: 0.25rem;\r\n}\r\n\r\n.rounded-lg {\r\n\tborder-radius: 0.5rem;\r\n}\r\n\r\n.rounded-full {\r\n\tborder-radius: 9999px;\r\n}\r\n\r\n.rounded-t {\r\n\tborder-top-left-radius: 0.25rem;\r\n\tborder-top-right-radius: 0.25rem;\r\n}\r\n\r\n.border-t {\r\n\tborder-top-width: 1px;\r\n}\r\n\r\n.border-b {\r\n\tborder-bottom-width: 1px;\r\n}\r\n\r\n.border-l {\r\n\tborder-left-width: 1px;\r\n}\r\n\r\n.block {\r\n\tdisplay: block;\r\n}\r\n\r\n.flex {\r\n\tdisplay: flex;\r\n}\r\n\r\n.table {\r\n\tdisplay: table;\r\n}\r\n\r\n.hidden {\r\n\tdisplay: none;\r\n}\r\n\r\n.flex-col {\r\n\tflex-direction: column;\r\n}\r\n\r\n.items-start {\r\n\talign-items: flex-start;\r\n}\r\n\r\n.items-center {\r\n\talign-items: center;\r\n}\r\n\r\n.justify-center {\r\n\tjustify-content: center;\r\n}\r\n\r\n.flex-shrink-0 {\r\n\tflex-shrink: 0;\r\n}\r\n\r\n.font-semibold {\r\n\tfont-weight: 600;\r\n}\r\n\r\n.font-bold {\r\n\tfont-weight: 700;\r\n}\r\n\r\n.h-2 {\r\n\theight: 0.5rem;\r\n}\r\n\r\n.h-4 {\r\n\theight: 1rem;\r\n}\r\n\r\n.h-5 {\r\n\theight: 1.25rem;\r\n}\r\n\r\n.h-6 {\r\n\theight: 1.5rem;\r\n}\r\n\r\n.h-7 {\r\n\theight: 1.75rem;\r\n}\r\n\r\n.h-screen {\r\n\theight: 100vh;\r\n}\r\n\r\n.text-xs {\r\n\tfont-size: 0.75rem;\r\n\tline-height: 1rem;\r\n}\r\n\r\n.text-sm {\r\n\tfont-size: 0.875rem;\r\n\tline-height: 1.25rem;\r\n}\r\n\r\n.text-base {\r\n\tfont-size: 1rem;\r\n\tline-height: 1.5rem;\r\n}\r\n\r\n.leading-6 {\r\n\tline-height: 1.5rem;\r\n}\r\n\r\n.leading-none {\r\n\tline-height: 1;\r\n}\r\n\r\n.list-disc {\r\n\tlist-style-type: disc;\r\n}\r\n\r\n.mx-auto {\r\n\tmargin-left: auto;\r\n\tmargin-right: auto;\r\n}\r\n\r\n.ml-0 {\r\n\tmargin-left: 0;\r\n}\r\n\r\n.mt-1 {\r\n\tmargin-top: 0.25rem;\r\n}\r\n\r\n.mr-1 {\r\n\tmargin-right: 0.25rem;\r\n}\r\n\r\n.mb-1 {\r\n\tmargin-bottom: 0.25rem;\r\n}\r\n\r\n.mt-2 {\r\n\tmargin-top: 0.5rem;\r\n}\r\n\r\n.mr-2 {\r\n\tmargin-right: 0.5rem;\r\n}\r\n\r\n.ml-2 {\r\n\tmargin-left: 0.5rem;\r\n}\r\n\r\n.ml-0\\.5 {\r\n\tmargin-left: 0.125rem;\r\n}\r\n\r\n.mt-1\\.5 {\r\n\tmargin-top: 0.375rem;\r\n}\r\n\r\n.mr-1\\.5 {\r\n\tmargin-right: 0.375rem;\r\n}\r\n\r\n.mb-1\\.5 {\r\n\tmargin-bottom: 0.375rem;\r\n}\r\n\r\n.max-h-52 {\r\n\tmax-height: 13rem;\r\n}\r\n\r\n.max-w-md {\r\n\tmax-width: 28rem;\r\n}\r\n\r\n.min-h-screen {\r\n\tmin-height: 100vh;\r\n}\r\n\r\n.opacity-50 {\r\n\topacity: 0.5;\r\n}\r\n\r\n.hover\\:opacity-100:hover {\r\n\topacity: 1;\r\n}\r\n\r\n.outline-none {\r\n\toutline: 2px solid transparent;\r\n\toutline-offset: 2px;\r\n}\r\n\r\n.overflow-hidden {\r\n\toverflow: hidden;\r\n}\r\n\r\n.overflow-x-auto {\r\n\toverflow-x: auto;\r\n}\r\n\r\n.p-1 {\r\n\tpadding: 0.25rem;\r\n}\r\n\r\n.p-2 {\r\n\tpadding: 0.5rem;\r\n}\r\n\r\n.p-3 {\r\n\tpadding: 0.75rem;\r\n}\r\n\r\n.p-2\\.5 {\r\n\tpadding: 0.625rem;\r\n}\r\n\r\n.py-0 {\r\n\tpadding-top: 0;\r\n\tpadding-bottom: 0;\r\n}\r\n\r\n.px-1 {\r\n\tpadding-left: 0.25rem;\r\n\tpadding-right: 0.25rem;\r\n}\r\n\r\n.py-2 {\r\n\tpadding-top: 0.5rem;\r\n\tpadding-bottom: 0.5rem;\r\n}\r\n\r\n.py-3 {\r\n\tpadding-top: 0.75rem;\r\n\tpadding-bottom: 0.75rem;\r\n}\r\n\r\n.px-3 {\r\n\tpadding-left: 0.75rem;\r\n\tpadding-right: 0.75rem;\r\n}\r\n\r\n.px-4 {\r\n\tpadding-left: 1rem;\r\n\tpadding-right: 1rem;\r\n}\r\n\r\n.py-6 {\r\n\tpadding-top: 1.5rem;\r\n\tpadding-bottom: 1.5rem;\r\n}\r\n\r\n.py-8 {\r\n\tpadding-top: 2rem;\r\n\tpadding-bottom: 2rem;\r\n}\r\n\r\n.py-10 {\r\n\tpadding-top: 2.5rem;\r\n\tpadding-bottom: 2.5rem;\r\n}\r\n\r\n.py-0\\.5 {\r\n\tpadding-top: 0.125rem;\r\n\tpadding-bottom: 0.125rem;\r\n}\r\n\r\n.py-2\\.5 {\r\n\tpadding-top: 0.625rem;\r\n\tpadding-bottom: 0.625rem;\r\n}\r\n\r\n.pt-6 {\r\n\tpadding-top: 1.5rem;\r\n}\r\n\r\n.placeholder-white::-moz-placeholder {\r\n\t--placeholder-opacity: 1;\r\n\tcolor: rgba(255, 255, 255, var(--placeholder-opacity));\r\n}\r\n\r\n.placeholder-white:-ms-input-placeholder {\r\n\t--placeholder-opacity: 1;\r\n\tcolor: rgba(255, 255, 255, var(--placeholder-opacity));\r\n}\r\n\r\n.placeholder-white::placeholder {\r\n\t--placeholder-opacity: 1;\r\n\tcolor: rgba(255, 255, 255, var(--placeholder-opacity));\r\n}\r\n\r\n.focus\\:placeholder-gray-600:focus::-moz-placeholder {\r\n\t--placeholder-opacity: 1;\r\n\tcolor: rgba(82, 82, 91, var(--placeholder-opacity));\r\n}\r\n\r\n.focus\\:placeholder-gray-600:focus:-ms-input-placeholder {\r\n\t--placeholder-opacity: 1;\r\n\tcolor: rgba(82, 82, 91, var(--placeholder-opacity));\r\n}\r\n\r\n.focus\\:placeholder-gray-600:focus::placeholder {\r\n\t--placeholder-opacity: 1;\r\n\tcolor: rgba(82, 82, 91, var(--placeholder-opacity));\r\n}\r\n\r\n.fixed {\r\n\tposition: fixed;\r\n}\r\n\r\n.absolute {\r\n\tposition: absolute;\r\n}\r\n\r\n.relative {\r\n\tposition: relative;\r\n}\r\n\r\n.inset-0 {\r\n\ttop: 0;\r\n\tright: 0;\r\n\tbottom: 0;\r\n\tleft: 0;\r\n}\r\n\r\n.top-0 {\r\n\ttop: 0;\r\n}\r\n\r\n.left-0 {\r\n\tleft: 0;\r\n}\r\n\r\n.left-80 {\r\n\tleft: 20rem;\r\n}\r\n\r\n.shadow-lg {\r\n\tbox-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);\r\n}\r\n\r\n.shadow-inner {\r\n\tbox-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);\r\n}\r\n\r\n.shadow-outline {\r\n\tbox-shadow: 0 2px 0 0 #cc68a5;\r\n}\r\n\r\n.focus\\:shadow-xl:focus {\r\n\tbox-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);\r\n}\r\n\r\n.focus\\:shadow-outline:focus {\r\n\tbox-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);\r\n}\r\n\r\n.fill-current {\r\n\tfill: currentColor;\r\n}\r\n\r\n.text-white {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(255, 255, 255, var(--text-opacity));\r\n}\r\n\r\n.text-gray-500 {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(113, 113, 122, var(--text-opacity));\r\n}\r\n\r\n.text-gray-700 {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(63, 63, 70, var(--text-opacity));\r\n}\r\n\r\n.text-gray-800 {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(39, 39, 42, var(--text-opacity));\r\n}\r\n\r\n.text-gray-900 {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(24, 24, 27, var(--text-opacity));\r\n}\r\n\r\n.text-teal-500 {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(56, 178, 172, var(--text-opacity));\r\n}\r\n\r\n.text-teal-600 {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(49, 151, 149, var(--text-opacity));\r\n}\r\n\r\n.hover\\:text-gray-700:hover {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(63, 63, 70, var(--text-opacity));\r\n}\r\n\r\n.hover\\:text-teal-700:hover {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(44, 122, 123, var(--text-opacity));\r\n}\r\n\r\n.w-4 {\r\n\twidth: 1rem;\r\n}\r\n\r\n.w-5 {\r\n\twidth: 1.25rem;\r\n}\r\n\r\n.w-6 {\r\n\twidth: 1.5rem;\r\n}\r\n\r\n.w-8 {\r\n\twidth: 2rem;\r\n}\r\n\r\n.w-40 {\r\n\twidth: 10rem;\r\n}\r\n\r\n.w-full {\r\n\twidth: 100%;\r\n}\r\n\r\n.w-screen {\r\n\twidth: 100vw;\r\n}\r\n\r\n.z-10 {\r\n\tz-index: 10;\r\n}\r\n\r\n.z-20 {\r\n\tz-index: 20;\r\n}\r\n\r\n.transform {\r\n\t--transform-translate-x: 0;\r\n\t--transform-translate-y: 0;\r\n\t--transform-rotate: 0;\r\n\t--transform-skew-x: 0;\r\n\t--transform-skew-y: 0;\r\n\t--transform-scale-x: 1;\r\n\t--transform-scale-y: 1;\r\n\ttransform: translateX(var(--transform-translate-x)) translateY(var(--transform-translate-y))\r\n\t\trotate(var(--transform-rotate)) skewX(var(--transform-skew-x)) skewY(var(--transform-skew-y))\r\n\t\tscaleX(var(--transform-scale-x)) scaleY(var(--transform-scale-y));\r\n}\r\n\r\n.hover\\:translate-x-1:hover {\r\n\t--transform-translate-x: 0.25rem;\r\n}\r\n\r\n.-skew-y-6 {\r\n\t--transform-skew-y: -6deg;\r\n}\r\n\r\n.transition {\r\n\ttransition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow,\r\n\t\ttransform;\r\n}\r\n\r\n.ease-in {\r\n\ttransition-timing-function: cubic-bezier(0.4, 0, 1, 1);\r\n}\r\n\r\n.duration-75 {\r\n\ttransition-duration: 75ms;\r\n}\r\n\r\n@-webkit-keyframes spin {\r\n\tto {\r\n\t\ttransform: rotate(360deg);\r\n\t}\r\n}\r\n\r\n@keyframes spin {\r\n\tto {\r\n\t\ttransform: rotate(360deg);\r\n\t}\r\n}\r\n\r\n@-webkit-keyframes ping {\r\n\t75%,\r\n\t100% {\r\n\t\ttransform: scale(2);\r\n\t\topacity: 0;\r\n\t}\r\n}\r\n\r\n@keyframes ping {\r\n\t75%,\r\n\t100% {\r\n\t\ttransform: scale(2);\r\n\t\topacity: 0;\r\n\t}\r\n}\r\n\r\n@-webkit-keyframes pulse {\r\n\t50% {\r\n\t\topacity: 0.5;\r\n\t}\r\n}\r\n\r\n@keyframes pulse {\r\n\t50% {\r\n\t\topacity: 0.5;\r\n\t}\r\n}\r\n\r\n@-webkit-keyframes bounce {\r\n\t0%,\r\n\t100% {\r\n\t\ttransform: translateY(-25%);\r\n\t\t-webkit-animation-timing-function: cubic-bezier(0.8, 0, 1, 1);\r\n\t\tanimation-timing-function: cubic-bezier(0.8, 0, 1, 1);\r\n\t}\r\n\r\n\t50% {\r\n\t\ttransform: none;\r\n\t\t-webkit-animation-timing-function: cubic-bezier(0, 0, 0.2, 1);\r\n\t\tanimation-timing-function: cubic-bezier(0, 0, 0.2, 1);\r\n\t}\r\n}\r\n\r\n@keyframes bounce {\r\n\t0%,\r\n\t100% {\r\n\t\ttransform: translateY(-25%);\r\n\t\t-webkit-animation-timing-function: cubic-bezier(0.8, 0, 1, 1);\r\n\t\tanimation-timing-function: cubic-bezier(0.8, 0, 1, 1);\r\n\t}\r\n\r\n\t50% {\r\n\t\ttransform: none;\r\n\t\t-webkit-animation-timing-function: cubic-bezier(0, 0, 0.2, 1);\r\n\t\tanimation-timing-function: cubic-bezier(0, 0, 0.2, 1);\r\n\t}\r\n}\r\n\r\n@media (min-width: 420px) {\r\n\t.sm\\:rounded-3xl {\r\n\t\tborder-radius: 1.5rem;\r\n\t}\r\n\r\n\t.sm\\:flex {\r\n\t\tdisplay: flex;\r\n\t}\r\n\r\n\t.sm\\:h-7 {\r\n\t\theight: 1.75rem;\r\n\t}\r\n\r\n\t.sm\\:h-20 {\r\n\t\theight: 5rem;\r\n\t}\r\n\r\n\t.sm\\:text-lg {\r\n\t\tfont-size: 1.125rem;\r\n\t\tline-height: 1.75rem;\r\n\t}\r\n\r\n\t.sm\\:leading-7 {\r\n\t\tline-height: 1.75rem;\r\n\t}\r\n\r\n\t.sm\\:m-0 {\r\n\t\tmargin: 0;\r\n\t}\r\n\r\n\t.sm\\:mx-4 {\r\n\t\tmargin-left: 1rem;\r\n\t\tmargin-right: 1rem;\r\n\t}\r\n\r\n\t.sm\\:mx-auto {\r\n\t\tmargin-left: auto;\r\n\t\tmargin-right: auto;\r\n\t}\r\n\r\n\t.sm\\:mb-0 {\r\n\t\tmargin-bottom: 0;\r\n\t}\r\n\r\n\t.sm\\:max-h-36 {\r\n\t\tmax-height: 9rem;\r\n\t}\r\n\r\n\t.sm\\:max-w-xl {\r\n\t\tmax-width: 36rem;\r\n\t}\r\n\r\n\t.sm\\:p-20 {\r\n\t\tpadding: 5rem;\r\n\t}\r\n\r\n\t.sm\\:py-12 {\r\n\t\tpadding-top: 3rem;\r\n\t\tpadding-bottom: 3rem;\r\n\t}\r\n\r\n\t.sm\\:pr-8 {\r\n\t\tpadding-right: 2rem;\r\n\t}\r\n\r\n\t.sm\\:absolute {\r\n\t\tposition: absolute;\r\n\t}\r\n\r\n\t.sm\\:w-80 {\r\n\t\twidth: 20rem;\r\n\t}\r\n\r\n\t.sm\\:-rotate-6 {\r\n\t\t--transform-rotate: -6deg;\r\n\t}\r\n\r\n\t.sm\\:skew-y-0 {\r\n\t\t--transform-skew-y: 0;\r\n\t}\r\n}\r\n\r\n@media (min-width: 768px) {\r\n}\r\n\r\n@media (min-width: 1024px) {\r\n\t.lg\\:bg-teal-500 {\r\n\t\t--bg-opacity: 1;\r\n\t\tbackground-color: rgba(56, 178, 172, var(--bg-opacity));\r\n\t}\r\n\r\n\t.lg\\:bg-none {\r\n\t\tbackground-image: none;\r\n\t}\r\n\r\n\t.lg\\:bg-gradient-to-r {\r\n\t\tbackground-image: linear-gradient(to right, var(--gradient-color-stops));\r\n\t}\r\n\r\n\t.lg\\:from-yellow-300 {\r\n\t\t--gradient-from-color: #fcd34d;\r\n\t\t--gradient-color-stops: var(--gradient-from-color),\r\n\t\t\tvar(--gradient-to-color, rgba(252, 211, 77, 0));\r\n\t}\r\n\r\n\t.lg\\:to-pink-400 {\r\n\t\t--gradient-to-color: #f472b6;\r\n\t}\r\n}\r\n\r\n@media (min-width: 1280px) {\r\n}\r\n\r\n@media (min-width: 1536px) {\r\n}\r\n\r\n\r\n/* adds */\r\n.items-end {\r\n\talign-items: flex-end;\r\n}\r\n\r\n.hover\\:translate-x-6:hover {\r\n\t--transform-translate-x: 0.6rem;\r\n}\r\n\r\n.duration-130 {\r\n\ttransition-duration: 130ms;\r\n}\r\n\r\n.justify-between {\r\n\tjustify-content: space-between;\r\n}\r\n\r\n.pl-1 {\r\n\tpadding-left: 0.25rem;\r\n}\r\n\r\n.pl-2 {\r\n\tpadding-left: 0.50rem;\r\n}\r\n\r\n.pl-3 {\r\n\tpadding-left: 0.75rem;\r\n}\r\n\r\n.pl-4 {\r\n\tpadding-left: 1rem;\r\n}\r\n\r\n.pr-1 {\r\n\tpadding-right: 0.25rem;\r\n}\r\n\r\n.pr-2 {\r\n\tpadding-right: 0.50rem;\r\n}\r\n\r\n.pr-3 {\r\n\tpadding-right: 0.75rem;\r\n}\r\n\r\n.pr-4 {\r\n\tpadding-right: 1rem;\r\n}\r\n\r\n.pb-1 {\r\n\tpadding-bottom: 0.25rem;\r\n}\r\n\r\n.pb-0-5 {\r\n\tpadding-bottom: 0.12rem;\r\n}\r\n\r\n.pb-2 {\r\n\tpadding-bottom: 0.50rem;\r\n}\r\n\r\n.pb-3 {\r\n\tpadding-bottom: 0.75rem;\r\n}\r\n\r\n\r\n/* add animations */\r\n/* buzz */\r\n@-webkit-keyframes delete-btn {\r\n  50% {\r\n    transform: translateX(3px) rotate(2deg);\r\n  }\r\n  100% {\r\n    transform: translateX(-3px) rotate(-2deg);\r\n  }\r\n}\r\n@keyframes delete-btn {\r\n  50% {\r\n    transform: translateX(3px) rotate(2deg);\r\n  }\r\n  100% {\r\n    transform: translateX(-3px) rotate(-2deg);\r\n  }\r\n}\r\n.delete-btn {\r\n  display: inline-block;\r\n  vertical-align: middle;\r\n  transform: perspective(1px) translateZ(0);\r\n  box-shadow: 0 0 1px rgba(0, 0, 0, 0);\r\n}\r\n.delete-btn:hover, .delete-btn:focus, .delete-btn:active {\r\n  -webkit-animation-name: delete-btn;\r\n  animation-name: delete-btn;\r\n  -webkit-animation-duration: 0.15s;\r\n  animation-duration: 0.15s;\r\n  -webkit-animation-timing-function: linear;\r\n  animation-timing-function: linear;\r\n  -webkit-animation-iteration-count: infinite;\r\n  animation-iteration-count: infinite;\r\n}\r\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "/*! modern-normalize v1.0.0 | MIT License | https://github.com/sindresorhus/modern-normalize */\r\n\r\n/*\r\nDocument\r\n========\r\n*/\r\n\r\n/**\r\nUse a better box model (opinionated).\r\n*/\r\n\r\n*,\r\n*::before,\r\n*::after {\r\n\tbox-sizing: border-box;\r\n}\r\n\r\n/**\r\nUse a more readable tab size (opinionated).\r\n*/\r\n\r\n:root {\r\n\t-moz-tab-size: 4;\r\n\t-o-tab-size: 4;\r\n\ttab-size: 4;\r\n}\r\n\r\n/**\r\n1. Correct the line height in all browsers.\r\n2. Prevent adjustments of font size after orientation changes in iOS.\r\n*/\r\n\r\nhtml {\r\n\tline-height: 1.15; /* 1 */\r\n\t-webkit-text-size-adjust: 100%; /* 2 */\r\n}\r\n\r\n/*\r\nSections\r\n========\r\n*/\r\n\r\n/**\r\nRemove the margin in all browsers.\r\n*/\r\n\r\nbody {\r\n\tmargin: 0;\r\n}\r\n\r\n/**\r\nImprove consistency of default fonts in all browsers. (https://github.com/sindresorhus/modern-normalize/issues/3)\r\n*/\r\n\r\nbody {\r\n\tfont-family: system-ui, -apple-system,\r\n\t\t/* Firefox supports this but not yet `system-ui` */ 'Segoe UI', Roboto, Helvetica, Arial,\r\n\t\tsans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';\r\n}\r\n\r\n/*\r\nGrouping content\r\n================\r\n*/\r\n\r\n/**\r\n1. Add the correct height in Firefox.\r\n2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)\r\n*/\r\n\r\nhr {\r\n\theight: 0; /* 1 */\r\n\tcolor: inherit; /* 2 */\r\n}\r\n\r\n/*\r\nText-level semantics\r\n====================\r\n*/\r\n\r\n/**\r\nAdd the correct text decoration in Chrome, Edge, and Safari.\r\n*/\r\n\r\nabbr[title] {\r\n\t-webkit-text-decoration: underline dotted;\r\n\ttext-decoration: underline dotted;\r\n}\r\n\r\n/**\r\nAdd the correct font weight in Edge and Safari.\r\n*/\r\n\r\nb,\r\nstrong {\r\n\tfont-weight: bolder;\r\n}\r\n\r\n/**\r\n1. Improve consistency of default fonts in all browsers. (https://github.com/sindresorhus/modern-normalize/issues/3)\r\n2. Correct the odd 'em' font sizing in all browsers.\r\n*/\r\n\r\ncode,\r\nkbd,\r\nsamp,\r\npre {\r\n\tfont-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace; /* 1 */\r\n\tfont-size: 1em; /* 2 */\r\n}\r\n\r\n/**\r\nAdd the correct font size in all browsers.\r\n*/\r\n\r\nsmall {\r\n\tfont-size: 80%;\r\n}\r\n\r\n/**\r\nPrevent 'sub' and 'sup' elements from affecting the line height in all browsers.\r\n*/\r\n\r\nsub,\r\nsup {\r\n\tfont-size: 75%;\r\n\tline-height: 0;\r\n\tposition: relative;\r\n\tvertical-align: baseline;\r\n}\r\n\r\nsub {\r\n\tbottom: -0.25em;\r\n}\r\n\r\nsup {\r\n\ttop: -0.5em;\r\n}\r\n\r\n/*\r\nTabular data\r\n============\r\n*/\r\n\r\n/**\r\n1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)\r\n2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)\r\n*/\r\n\r\ntable {\r\n\ttext-indent: 0; /* 1 */\r\n\tborder-color: inherit; /* 2 */\r\n}\r\n\r\n/*\r\nForms\r\n=====\r\n*/\r\n\r\n/**\r\n1. Change the font styles in all browsers.\r\n2. Remove the margin in Firefox and Safari.\r\n*/\r\n\r\nbutton,\r\ninput,\r\noptgroup,\r\nselect,\r\ntextarea {\r\n\tfont-family: inherit; /* 1 */\r\n\tfont-size: 100%; /* 1 */\r\n\tline-height: 1.15; /* 1 */\r\n\tmargin: 0; /* 2 */\r\n}\r\n\r\n/**\r\nRemove the inheritance of text transform in Edge and Firefox.\r\n1. Remove the inheritance of text transform in Firefox.\r\n*/\r\n\r\nbutton,\r\nselect {\r\n\t/* 1 */\r\n\ttext-transform: none;\r\n}\r\n\r\n/**\r\nCorrect the inability to style clickable types in iOS and Safari.\r\n*/\r\n\r\nbutton,\r\n[type='button'] {\r\n\t-webkit-appearance: button;\r\n}\r\n\r\n/**\r\nRemove the inner border and padding in Firefox.\r\n*/\r\n\r\n/**\r\nRestore the focus styles unset by the previous rule.\r\n*/\r\n\r\n/**\r\nRemove the additional ':invalid' styles in Firefox.\r\nSee: https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737\r\n*/\r\n\r\n/**\r\nRemove the padding so developers are not caught out when they zero out 'fieldset' elements in all browsers.\r\n*/\r\n\r\nlegend {\r\n\tpadding: 0;\r\n}\r\n\r\n/**\r\nAdd the correct vertical alignment in Chrome and Firefox.\r\n*/\r\n\r\nprogress {\r\n\tvertical-align: baseline;\r\n}\r\n\r\n/**\r\nCorrect the cursor style of increment and decrement buttons in Safari.\r\n*/\r\n\r\n/**\r\n1. Correct the odd appearance in Chrome and Safari.\r\n2. Correct the outline style in Safari.\r\n*/\r\n\r\n/**\r\nRemove the inner padding in Chrome and Safari on macOS.\r\n*/\r\n\r\n/**\r\n1. Correct the inability to style clickable types in iOS and Safari.\r\n2. Change font properties to 'inherit' in Safari.\r\n*/\r\n\r\n/*\r\nInteractive\r\n===========\r\n*/\r\n\r\n/*\r\nAdd the correct display in Chrome and Safari.\r\n*/\r\n\r\nsummary {\r\n\tdisplay: list-item;\r\n}\r\n\r\n/**\r\n * Manually forked from SUIT CSS Base: https://github.com/suitcss/base\r\n * A thin layer on top of normalize.css that provides a starting point more\r\n * suitable for web applications.\r\n */\r\n\r\n/**\r\n * Removes the default spacing and border for appropriate elements.\r\n */\r\n\r\nblockquote,\r\ndl,\r\ndd,\r\nh1,\r\nh2,\r\nh3,\r\nh4,\r\nh5,\r\nh6,\r\nhr,\r\nfigure,\r\np,\r\npre {\r\n\tmargin: 0;\r\n}\r\n\r\nbutton {\r\n\tbackground-color: transparent;\r\n\tbackground-image: none;\r\n}\r\n\r\n/**\r\n * Work around a Firefox/IE bug where the transparent `button` background\r\n * results in a loss of the default `button` focus styles.\r\n */\r\n\r\nbutton:focus {\r\n\toutline: 1px dotted;\r\n\toutline: 5px auto -webkit-focus-ring-color;\r\n}\r\n\r\nfieldset {\r\n\tmargin: 0;\r\n\tpadding: 0;\r\n}\r\n\r\nol,\r\nul {\r\n\tlist-style: none;\r\n\tmargin: 0;\r\n\tpadding: 0;\r\n}\r\n\r\n/**\r\n * Tailwind custom reset styles\r\n */\r\n\r\n/**\r\n * 1. Use the user's configured `sans` font-family (with Tailwind's default\r\n *    sans-serif font stack as a fallback) as a sane default.\r\n * 2. Use Tailwind's default \"normal\" line-height so the user isn't forced\r\n *    to override it to ensure consistency even when using the default theme.\r\n */\r\n\r\nhtml,\r\nbody {\r\n\tfont-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,\r\n\t\t'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',\r\n\t\t'Segoe UI Symbol', 'Noto Color Emoji'; /* 1 */\r\n\tline-height: 1.5; /* 2 */\r\n}\r\n\r\n/**\r\n * 1. Prevent padding and border from affecting element width.\r\n *\r\n *    We used to set this in the html element and inherit from\r\n *    the parent element for everything else. This caused issues\r\n *    in shadow-dom-enhanced elements like <details> where the content\r\n *    is wrapped by a div with box-sizing set to `content-box`.\r\n *\r\n *    https://github.com/mozdevs/cssremedy/issues/4\r\n *\r\n *\r\n * 2. Allow adding a border to an element by just adding a border-width.\r\n *\r\n *    By default, the way the browser specifies that an element should have no\r\n *    border is by setting it's border-style to `none` in the user-agent\r\n *    stylesheet.\r\n *\r\n *    In order to easily add borders to elements by just setting the `border-width`\r\n *    property, we change the default border-style for all elements to `solid`, and\r\n *    use border-width to hide them instead. This way our `border` utilities only\r\n *    need to set the `border-width` property instead of the entire `border`\r\n *    shorthand, making our border utilities much more straightforward to compose.\r\n *\r\n *    https://github.com/tailwindcss/tailwindcss/pull/116\r\n */\r\n\r\n*,\r\n::before,\r\n::after {\r\n\tbox-sizing: border-box; /* 1 */\r\n\tborder-width: 0; /* 2 */\r\n\tborder-style: solid; /* 2 */\r\n\tborder-color: #e4e4e7; /* 2 */\r\n}\r\n\r\n/*\r\n * Ensure horizontal rules are visible by default\r\n */\r\n\r\nhr {\r\n\tborder-top-width: 1px;\r\n}\r\n\r\n/**\r\n * Undo the `border-style: none` reset that Normalize applies to images so that\r\n * our `border-{width}` utilities have the expected effect.\r\n *\r\n * The Normalize reset is unnecessary for us since we default the border-width\r\n * to 0 on all elements.\r\n *\r\n * https://github.com/tailwindcss/tailwindcss/issues/362\r\n */\r\n\r\nimg {\r\n\tborder-style: solid;\r\n}\r\n\r\ntextarea {\r\n\tresize: vertical;\r\n}\r\n\r\ninput::-moz-placeholder,\r\ntextarea::-moz-placeholder {\r\n\tcolor: #a1a1aa;\r\n}\r\n\r\ninput:-ms-input-placeholder,\r\ntextarea:-ms-input-placeholder {\r\n\tcolor: #a1a1aa;\r\n}\r\n\r\ninput::-moz-placeholder, textarea::-moz-placeholder {\r\n\tcolor: #a1a1aa;\r\n}\r\n\r\ninput:-ms-input-placeholder, textarea:-ms-input-placeholder {\r\n\tcolor: #a1a1aa;\r\n}\r\n\r\ninput::placeholder,\r\ntextarea::placeholder {\r\n\tcolor: #a1a1aa;\r\n}\r\n\r\nbutton {\r\n\tcursor: pointer;\r\n}\r\n\r\ntable {\r\n\tborder-collapse: collapse;\r\n}\r\n\r\nh1,\r\nh2,\r\nh3,\r\nh4,\r\nh5,\r\nh6 {\r\n\tfont-size: inherit;\r\n\tfont-weight: inherit;\r\n}\r\n\r\n/**\r\n * Reset links to optimize for opt-in styling instead of\r\n * opt-out.\r\n */\r\n\r\na {\r\n\tcolor: inherit;\r\n\ttext-decoration: inherit;\r\n}\r\n\r\n/**\r\n * Reset form element properties that are easy to forget to\r\n * style explicitly so you don't inadvertently introduce\r\n * styles that deviate from your design system. These styles\r\n * supplement a partial reset that is already applied by\r\n * normalize.css.\r\n */\r\n\r\nbutton,\r\ninput,\r\noptgroup,\r\nselect,\r\ntextarea {\r\n\tpadding: 0;\r\n\tline-height: inherit;\r\n\tcolor: inherit;\r\n}\r\n\r\n/**\r\n * Use the configured 'mono' font family for elements that\r\n * are expected to be rendered with a monospace font, falling\r\n * back to the system monospace stack if there is no configured\r\n * 'mono' font family.\r\n */\r\n\r\npre,\r\ncode,\r\nkbd,\r\nsamp {\r\n\tfont-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',\r\n\t\t'Courier New', monospace;\r\n}\r\n\r\n/**\r\n * Make replaced elements `display: block` by default as that's\r\n * the behavior you want almost all of the time. Inspired by\r\n * CSS Remedy, with `svg` added as well.\r\n *\r\n * https://github.com/mozdevs/cssremedy/issues/14\r\n */\r\n\r\nimg,\r\nsvg,\r\nvideo,\r\ncanvas,\r\naudio,\r\niframe,\r\nembed,\r\nobject {\r\n\tdisplay: block;\r\n\tvertical-align: middle;\r\n}\r\n\r\n/**\r\n * Constrain images and videos to the parent width and preserve\r\n * their instrinsic aspect ratio.\r\n *\r\n * https://github.com/mozdevs/cssremedy/issues/14\r\n */\r\n\r\nimg,\r\nvideo {\r\n\tmax-width: 100%;\r\n\theight: auto;\r\n}\r\n\r\n/**\r\n\t * CARDS\r\n\t */\r\n\r\n.card {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(255, 255, 255, var(--bg-opacity));\r\n\t--border-opacity: 1;\r\n\tborder-color: rgba(161, 161, 170, var(--border-opacity));\r\n\tborder-radius: 0.25rem;\r\n\tborder-bottom-width: 1px;\r\n\tcursor: pointer;\r\n\tline-height: 1.375;\r\n\tmargin-top: 0.5rem;\r\n\tmargin-bottom: 0.5rem;\r\n}\r\n\r\n/**\r\n* LISTS\r\n*/\r\n\r\n.card:hover {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(244, 244, 245, var(--bg-opacity));\r\n}\r\n\r\n.list {\r\n\t/* size */\r\n\tflex-shrink: 0;\r\n\tmargin-bottom: 2.5rem;\r\n\tpadding: 0.75rem;\r\n\tpadding-bottom: 0.5rem;\r\n\twidth: 100%;\r\n\t/* colors */\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(228, 228, 231, var(--bg-opacity));\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(39, 39, 42, var(--text-opacity));\r\n\t/* special stuff */\r\n\tborder-radius: 0.5rem;\r\n\tbox-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);\r\n}\r\n\r\n/**\r\n* BUTTONS\r\n*/\r\n\r\n.btn {\r\n\t--border-opacity: 1;\r\n\tborder-color: rgba(82, 82, 91, var(--border-opacity));\r\n\tborder-radius: 0.25rem;\r\n\tborder-bottom-width: 1px;\r\n\tfont-weight: 600;\r\n\tpadding-top: 0.25rem;\r\n\tpadding-bottom: 0.25rem;\r\n\tpadding-left: 0.75rem;\r\n\tpadding-right: 0.75rem;\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(255, 255, 255, var(--text-opacity));\r\n\ttext-shadow: 1px 1px 0 rgba(0, 0, 0, 0.35);\r\n}\r\n\r\n.btn-green {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(16, 185, 129, var(--bg-opacity));\r\n}\r\n\r\n.btn-green:hover,\r\n.btn-green:active {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(52, 211, 153, var(--bg-opacity));\r\n}\r\n\r\n@media (min-width: 420px) {\r\n\t.list {\r\n\t\tmargin-left: 1rem;\r\n\t\tmargin-right: 1rem;\r\n\t\tmargin-bottom: 0;\r\n\t\twidth: 20rem;\r\n\t}\r\n}\r\n\r\n.space-y-2 > :not([hidden]) ~ :not([hidden]) {\r\n\t--space-y-reverse: 0;\r\n\tmargin-top: calc(0.5rem * calc(1 - var(--space-y-reverse)));\r\n\tmargin-bottom: calc(0.5rem * var(--space-y-reverse));\r\n}\r\n\r\n.space-y-4 > :not([hidden]) ~ :not([hidden]) {\r\n\t--space-y-reverse: 0;\r\n\tmargin-top: calc(1rem * calc(1 - var(--space-y-reverse)));\r\n\tmargin-bottom: calc(1rem * var(--space-y-reverse));\r\n}\r\n\r\n.divide-y > :not([hidden]) ~ :not([hidden]) {\r\n\t--divide-y-reverse: 0;\r\n\tborder-top-width: calc(1px * calc(1 - var(--divide-y-reverse)));\r\n\tborder-bottom-width: calc(1px * var(--divide-y-reverse));\r\n}\r\n\r\n.divide-gray-200 > :not([hidden]) ~ :not([hidden]) {\r\n\t--divide-opacity: 1;\r\n\tborder-color: rgba(228, 228, 231, var(--divide-opacity));\r\n}\r\n\r\n.bg-black {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(0, 0, 0, var(--bg-opacity));\r\n}\r\n\r\n.bg-white {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(255, 255, 255, var(--bg-opacity));\r\n}\r\n\r\n.bg-gray-500 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(113, 113, 122, var(--bg-opacity));\r\n}\r\n\r\n.bg-red-400 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(248, 113, 113, var(--bg-opacity));\r\n}\r\n\r\n.bg-yellow-300 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(252, 211, 77, var(--bg-opacity));\r\n}\r\n\r\n.bg-yellow-400 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(251, 191, 36, var(--bg-opacity));\r\n}\r\n\r\n.bg-green-300 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(110, 231, 183, var(--bg-opacity));\r\n}\r\n\r\n.bg-green-400 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(52, 211, 153, var(--bg-opacity));\r\n}\r\n\r\n.bg-blue-400 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(96, 165, 250, var(--bg-opacity));\r\n}\r\n\r\n.bg-purple-300 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(196, 181, 253, var(--bg-opacity));\r\n}\r\n\r\n.bg-purple-400 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(167, 139, 250, var(--bg-opacity));\r\n}\r\n\r\n.bg-purple-500 {\r\n\t--bg-opacity: 1;\r\n\tbackground-color: rgba(139, 92, 246, var(--bg-opacity));\r\n}\r\n\r\n.bg-gradient-to-r {\r\n\tbackground-image: linear-gradient(to right, var(--gradient-color-stops));\r\n}\r\n\r\n.from-red-400 {\r\n\t--gradient-from-color: #f87171;\r\n\t--gradient-color-stops: var(--gradient-from-color),\r\n\t\tvar(--gradient-to-color, rgba(248, 113, 113, 0));\r\n}\r\n\r\n.from-teal-400 {\r\n\t--gradient-from-color: #4fd1c5;\r\n\t--gradient-color-stops: var(--gradient-from-color),\r\n\t\tvar(--gradient-to-color, rgba(79, 209, 197, 0));\r\n}\r\n\r\n.to-blue-400 {\r\n\t--gradient-to-color: #60a5fa;\r\n}\r\n\r\n.to-pink-400 {\r\n\t--gradient-to-color: #f472b6;\r\n}\r\n\r\n.bg-opacity-40 {\r\n\t--bg-opacity: 0.4;\r\n}\r\n\r\n.bg-opacity-60 {\r\n\t--bg-opacity: 0.6;\r\n}\r\n\r\n.bg-opacity-70 {\r\n\t--bg-opacity: 0.7;\r\n}\r\n\r\n.hover\\:bg-opacity-100:hover {\r\n\t--bg-opacity: 1;\r\n}\r\n\r\n.focus\\:bg-opacity-100:focus {\r\n\t--bg-opacity: 1;\r\n}\r\n\r\n.border-gray-200 {\r\n\t--border-opacity: 1;\r\n\tborder-color: rgba(228, 228, 231, var(--border-opacity));\r\n}\r\n\r\n.border-gray-300 {\r\n\t--border-opacity: 1;\r\n\tborder-color: rgba(212, 212, 216, var(--border-opacity));\r\n}\r\n\r\n.rounded {\r\n\tborder-radius: 0.25rem;\r\n}\r\n\r\n.rounded-lg {\r\n\tborder-radius: 0.5rem;\r\n}\r\n\r\n.rounded-full {\r\n\tborder-radius: 9999px;\r\n}\r\n\r\n.rounded-t {\r\n\tborder-top-left-radius: 0.25rem;\r\n\tborder-top-right-radius: 0.25rem;\r\n}\r\n\r\n.border-t {\r\n\tborder-top-width: 1px;\r\n}\r\n\r\n.border-b {\r\n\tborder-bottom-width: 1px;\r\n}\r\n\r\n.border-l {\r\n\tborder-left-width: 1px;\r\n}\r\n\r\n.block {\r\n\tdisplay: block;\r\n}\r\n\r\n.flex {\r\n\tdisplay: flex;\r\n}\r\n\r\n.table {\r\n\tdisplay: table;\r\n}\r\n\r\n.hidden {\r\n\tdisplay: none;\r\n}\r\n\r\n.flex-col {\r\n\tflex-direction: column;\r\n}\r\n\r\n.items-start {\r\n\talign-items: flex-start;\r\n}\r\n\r\n.items-center {\r\n\talign-items: center;\r\n}\r\n\r\n.justify-center {\r\n\tjustify-content: center;\r\n}\r\n\r\n.flex-shrink-0 {\r\n\tflex-shrink: 0;\r\n}\r\n\r\n.font-semibold {\r\n\tfont-weight: 600;\r\n}\r\n\r\n.font-bold {\r\n\tfont-weight: 700;\r\n}\r\n\r\n.h-2 {\r\n\theight: 0.5rem;\r\n}\r\n\r\n.h-4 {\r\n\theight: 1rem;\r\n}\r\n\r\n.h-5 {\r\n\theight: 1.25rem;\r\n}\r\n\r\n.h-6 {\r\n\theight: 1.5rem;\r\n}\r\n\r\n.h-7 {\r\n\theight: 1.75rem;\r\n}\r\n\r\n.h-screen {\r\n\theight: 100vh;\r\n}\r\n\r\n.text-xs {\r\n\tfont-size: 0.75rem;\r\n\tline-height: 1rem;\r\n}\r\n\r\n.text-sm {\r\n\tfont-size: 0.875rem;\r\n\tline-height: 1.25rem;\r\n}\r\n\r\n.text-base {\r\n\tfont-size: 1rem;\r\n\tline-height: 1.5rem;\r\n}\r\n\r\n.leading-6 {\r\n\tline-height: 1.5rem;\r\n}\r\n\r\n.leading-none {\r\n\tline-height: 1;\r\n}\r\n\r\n.list-disc {\r\n\tlist-style-type: disc;\r\n}\r\n\r\n.mx-auto {\r\n\tmargin-left: auto;\r\n\tmargin-right: auto;\r\n}\r\n\r\n.ml-0 {\r\n\tmargin-left: 0;\r\n}\r\n\r\n.mt-1 {\r\n\tmargin-top: 0.25rem;\r\n}\r\n\r\n.mr-1 {\r\n\tmargin-right: 0.25rem;\r\n}\r\n\r\n.mb-1 {\r\n\tmargin-bottom: 0.25rem;\r\n}\r\n\r\n.mt-2 {\r\n\tmargin-top: 0.5rem;\r\n}\r\n\r\n.mr-2 {\r\n\tmargin-right: 0.5rem;\r\n}\r\n\r\n.ml-2 {\r\n\tmargin-left: 0.5rem;\r\n}\r\n\r\n.ml-0\\.5 {\r\n\tmargin-left: 0.125rem;\r\n}\r\n\r\n.mt-1\\.5 {\r\n\tmargin-top: 0.375rem;\r\n}\r\n\r\n.mr-1\\.5 {\r\n\tmargin-right: 0.375rem;\r\n}\r\n\r\n.mb-1\\.5 {\r\n\tmargin-bottom: 0.375rem;\r\n}\r\n\r\n.max-h-52 {\r\n\tmax-height: 13rem;\r\n}\r\n\r\n.max-w-md {\r\n\tmax-width: 28rem;\r\n}\r\n\r\n.min-h-screen {\r\n\tmin-height: 100vh;\r\n}\r\n\r\n.opacity-50 {\r\n\topacity: 0.5;\r\n}\r\n\r\n.hover\\:opacity-100:hover {\r\n\topacity: 1;\r\n}\r\n\r\n.outline-none {\r\n\toutline: 2px solid transparent;\r\n\toutline-offset: 2px;\r\n}\r\n\r\n.overflow-hidden {\r\n\toverflow: hidden;\r\n}\r\n\r\n.overflow-x-auto {\r\n\toverflow-x: auto;\r\n}\r\n\r\n.p-1 {\r\n\tpadding: 0.25rem;\r\n}\r\n\r\n.p-2 {\r\n\tpadding: 0.5rem;\r\n}\r\n\r\n.p-3 {\r\n\tpadding: 0.75rem;\r\n}\r\n\r\n.p-2\\.5 {\r\n\tpadding: 0.625rem;\r\n}\r\n\r\n.py-0 {\r\n\tpadding-top: 0;\r\n\tpadding-bottom: 0;\r\n}\r\n\r\n.px-1 {\r\n\tpadding-left: 0.25rem;\r\n\tpadding-right: 0.25rem;\r\n}\r\n\r\n.py-2 {\r\n\tpadding-top: 0.5rem;\r\n\tpadding-bottom: 0.5rem;\r\n}\r\n\r\n.py-3 {\r\n\tpadding-top: 0.75rem;\r\n\tpadding-bottom: 0.75rem;\r\n}\r\n\r\n.px-3 {\r\n\tpadding-left: 0.75rem;\r\n\tpadding-right: 0.75rem;\r\n}\r\n\r\n.px-4 {\r\n\tpadding-left: 1rem;\r\n\tpadding-right: 1rem;\r\n}\r\n\r\n.py-6 {\r\n\tpadding-top: 1.5rem;\r\n\tpadding-bottom: 1.5rem;\r\n}\r\n\r\n.py-8 {\r\n\tpadding-top: 2rem;\r\n\tpadding-bottom: 2rem;\r\n}\r\n\r\n.py-10 {\r\n\tpadding-top: 2.5rem;\r\n\tpadding-bottom: 2.5rem;\r\n}\r\n\r\n.py-0\\.5 {\r\n\tpadding-top: 0.125rem;\r\n\tpadding-bottom: 0.125rem;\r\n}\r\n\r\n.py-2\\.5 {\r\n\tpadding-top: 0.625rem;\r\n\tpadding-bottom: 0.625rem;\r\n}\r\n\r\n.pt-6 {\r\n\tpadding-top: 1.5rem;\r\n}\r\n\r\n.placeholder-white::-moz-placeholder {\r\n\t--placeholder-opacity: 1;\r\n\tcolor: rgba(255, 255, 255, var(--placeholder-opacity));\r\n}\r\n\r\n.placeholder-white:-ms-input-placeholder {\r\n\t--placeholder-opacity: 1;\r\n\tcolor: rgba(255, 255, 255, var(--placeholder-opacity));\r\n}\r\n\r\n.placeholder-white::placeholder {\r\n\t--placeholder-opacity: 1;\r\n\tcolor: rgba(255, 255, 255, var(--placeholder-opacity));\r\n}\r\n\r\n.focus\\:placeholder-gray-600:focus::-moz-placeholder {\r\n\t--placeholder-opacity: 1;\r\n\tcolor: rgba(82, 82, 91, var(--placeholder-opacity));\r\n}\r\n\r\n.focus\\:placeholder-gray-600:focus:-ms-input-placeholder {\r\n\t--placeholder-opacity: 1;\r\n\tcolor: rgba(82, 82, 91, var(--placeholder-opacity));\r\n}\r\n\r\n.focus\\:placeholder-gray-600:focus::placeholder {\r\n\t--placeholder-opacity: 1;\r\n\tcolor: rgba(82, 82, 91, var(--placeholder-opacity));\r\n}\r\n\r\n.fixed {\r\n\tposition: fixed;\r\n}\r\n\r\n.absolute {\r\n\tposition: absolute;\r\n}\r\n\r\n.relative {\r\n\tposition: relative;\r\n}\r\n\r\n.inset-0 {\r\n\ttop: 0;\r\n\tright: 0;\r\n\tbottom: 0;\r\n\tleft: 0;\r\n}\r\n\r\n.top-0 {\r\n\ttop: 0;\r\n}\r\n\r\n.left-0 {\r\n\tleft: 0;\r\n}\r\n\r\n.left-80 {\r\n\tleft: 20rem;\r\n}\r\n\r\n.shadow-lg {\r\n\tbox-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);\r\n}\r\n\r\n.shadow-inner {\r\n\tbox-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);\r\n}\r\n\r\n.shadow-outline {\r\n\tbox-shadow: 0 2px 0 0 #cc68a5;\r\n}\r\n\r\n.focus\\:shadow-xl:focus {\r\n\tbox-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);\r\n}\r\n\r\n.focus\\:shadow-outline:focus {\r\n\tbox-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);\r\n}\r\n\r\n.fill-current {\r\n\tfill: currentColor;\r\n}\r\n\r\n.text-white {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(255, 255, 255, var(--text-opacity));\r\n}\r\n\r\n.text-gray-500 {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(113, 113, 122, var(--text-opacity));\r\n}\r\n\r\n.text-gray-700 {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(63, 63, 70, var(--text-opacity));\r\n}\r\n\r\n.text-gray-800 {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(39, 39, 42, var(--text-opacity));\r\n}\r\n\r\n.text-gray-900 {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(24, 24, 27, var(--text-opacity));\r\n}\r\n\r\n.text-teal-500 {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(56, 178, 172, var(--text-opacity));\r\n}\r\n\r\n.text-teal-600 {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(49, 151, 149, var(--text-opacity));\r\n}\r\n\r\n.hover\\:text-gray-700:hover {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(63, 63, 70, var(--text-opacity));\r\n}\r\n\r\n.hover\\:text-teal-700:hover {\r\n\t--text-opacity: 1;\r\n\tcolor: rgba(44, 122, 123, var(--text-opacity));\r\n}\r\n\r\n.w-4 {\r\n\twidth: 1rem;\r\n}\r\n\r\n.w-5 {\r\n\twidth: 1.25rem;\r\n}\r\n\r\n.w-6 {\r\n\twidth: 1.5rem;\r\n}\r\n\r\n.w-8 {\r\n\twidth: 2rem;\r\n}\r\n\r\n.w-40 {\r\n\twidth: 10rem;\r\n}\r\n\r\n.w-full {\r\n\twidth: 100%;\r\n}\r\n\r\n.w-screen {\r\n\twidth: 100vw;\r\n}\r\n\r\n.z-10 {\r\n\tz-index: 10;\r\n}\r\n\r\n.z-20 {\r\n\tz-index: 20;\r\n}\r\n\r\n.transform {\r\n\t--transform-translate-x: 0;\r\n\t--transform-translate-y: 0;\r\n\t--transform-rotate: 0;\r\n\t--transform-skew-x: 0;\r\n\t--transform-skew-y: 0;\r\n\t--transform-scale-x: 1;\r\n\t--transform-scale-y: 1;\r\n\ttransform: translateX(var(--transform-translate-x)) translateY(var(--transform-translate-y))\r\n\t\trotate(var(--transform-rotate)) skewX(var(--transform-skew-x)) skewY(var(--transform-skew-y))\r\n\t\tscaleX(var(--transform-scale-x)) scaleY(var(--transform-scale-y));\r\n}\r\n\r\n.hover\\:translate-x-1:hover {\r\n\t--transform-translate-x: 0.25rem;\r\n}\r\n\r\n.-skew-y-6 {\r\n\t--transform-skew-y: -6deg;\r\n}\r\n\r\n.transition {\r\n\ttransition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow,\r\n\t\ttransform;\r\n}\r\n\r\n.ease-in {\r\n\ttransition-timing-function: cubic-bezier(0.4, 0, 1, 1);\r\n}\r\n\r\n.duration-75 {\r\n\ttransition-duration: 75ms;\r\n}\r\n\r\n@-webkit-keyframes spin {\r\n\tto {\r\n\t\ttransform: rotate(360deg);\r\n\t}\r\n}\r\n\r\n@keyframes spin {\r\n\tto {\r\n\t\ttransform: rotate(360deg);\r\n\t}\r\n}\r\n\r\n@-webkit-keyframes ping {\r\n\t75%,\r\n\t100% {\r\n\t\ttransform: scale(2);\r\n\t\topacity: 0;\r\n\t}\r\n}\r\n\r\n@keyframes ping {\r\n\t75%,\r\n\t100% {\r\n\t\ttransform: scale(2);\r\n\t\topacity: 0;\r\n\t}\r\n}\r\n\r\n@-webkit-keyframes pulse {\r\n\t50% {\r\n\t\topacity: 0.5;\r\n\t}\r\n}\r\n\r\n@keyframes pulse {\r\n\t50% {\r\n\t\topacity: 0.5;\r\n\t}\r\n}\r\n\r\n@-webkit-keyframes bounce {\r\n\t0%,\r\n\t100% {\r\n\t\ttransform: translateY(-25%);\r\n\t\t-webkit-animation-timing-function: cubic-bezier(0.8, 0, 1, 1);\r\n\t\tanimation-timing-function: cubic-bezier(0.8, 0, 1, 1);\r\n\t}\r\n\r\n\t50% {\r\n\t\ttransform: none;\r\n\t\t-webkit-animation-timing-function: cubic-bezier(0, 0, 0.2, 1);\r\n\t\tanimation-timing-function: cubic-bezier(0, 0, 0.2, 1);\r\n\t}\r\n}\r\n\r\n@keyframes bounce {\r\n\t0%,\r\n\t100% {\r\n\t\ttransform: translateY(-25%);\r\n\t\t-webkit-animation-timing-function: cubic-bezier(0.8, 0, 1, 1);\r\n\t\tanimation-timing-function: cubic-bezier(0.8, 0, 1, 1);\r\n\t}\r\n\r\n\t50% {\r\n\t\ttransform: none;\r\n\t\t-webkit-animation-timing-function: cubic-bezier(0, 0, 0.2, 1);\r\n\t\tanimation-timing-function: cubic-bezier(0, 0, 0.2, 1);\r\n\t}\r\n}\r\n\r\n@media (min-width: 420px) {\r\n\t.sm\\:rounded-3xl {\r\n\t\tborder-radius: 1.5rem;\r\n\t}\r\n\r\n\t.sm\\:flex {\r\n\t\tdisplay: flex;\r\n\t}\r\n\r\n\t.sm\\:h-7 {\r\n\t\theight: 1.75rem;\r\n\t}\r\n\r\n\t.sm\\:h-20 {\r\n\t\theight: 5rem;\r\n\t}\r\n\r\n\t.sm\\:text-lg {\r\n\t\tfont-size: 1.125rem;\r\n\t\tline-height: 1.75rem;\r\n\t}\r\n\r\n\t.sm\\:leading-7 {\r\n\t\tline-height: 1.75rem;\r\n\t}\r\n\r\n\t.sm\\:m-0 {\r\n\t\tmargin: 0;\r\n\t}\r\n\r\n\t.sm\\:mx-4 {\r\n\t\tmargin-left: 1rem;\r\n\t\tmargin-right: 1rem;\r\n\t}\r\n\r\n\t.sm\\:mx-auto {\r\n\t\tmargin-left: auto;\r\n\t\tmargin-right: auto;\r\n\t}\r\n\r\n\t.sm\\:mb-0 {\r\n\t\tmargin-bottom: 0;\r\n\t}\r\n\r\n\t.sm\\:max-h-36 {\r\n\t\tmax-height: 9rem;\r\n\t}\r\n\r\n\t.sm\\:max-w-xl {\r\n\t\tmax-width: 36rem;\r\n\t}\r\n\r\n\t.sm\\:p-20 {\r\n\t\tpadding: 5rem;\r\n\t}\r\n\r\n\t.sm\\:py-12 {\r\n\t\tpadding-top: 3rem;\r\n\t\tpadding-bottom: 3rem;\r\n\t}\r\n\r\n\t.sm\\:pr-8 {\r\n\t\tpadding-right: 2rem;\r\n\t}\r\n\r\n\t.sm\\:absolute {\r\n\t\tposition: absolute;\r\n\t}\r\n\r\n\t.sm\\:w-80 {\r\n\t\twidth: 20rem;\r\n\t}\r\n\r\n\t.sm\\:-rotate-6 {\r\n\t\t--transform-rotate: -6deg;\r\n\t}\r\n\r\n\t.sm\\:skew-y-0 {\r\n\t\t--transform-skew-y: 0;\r\n\t}\r\n}\r\n\r\n@media (min-width: 768px) {\r\n}\r\n\r\n@media (min-width: 1024px) {\r\n\t.lg\\:bg-teal-500 {\r\n\t\t--bg-opacity: 1;\r\n\t\tbackground-color: rgba(56, 178, 172, var(--bg-opacity));\r\n\t}\r\n\r\n\t.lg\\:bg-none {\r\n\t\tbackground-image: none;\r\n\t}\r\n\r\n\t.lg\\:bg-gradient-to-r {\r\n\t\tbackground-image: linear-gradient(to right, var(--gradient-color-stops));\r\n\t}\r\n\r\n\t.lg\\:from-yellow-300 {\r\n\t\t--gradient-from-color: #fcd34d;\r\n\t\t--gradient-color-stops: var(--gradient-from-color),\r\n\t\t\tvar(--gradient-to-color, rgba(252, 211, 77, 0));\r\n\t}\r\n\r\n\t.lg\\:to-pink-400 {\r\n\t\t--gradient-to-color: #f472b6;\r\n\t}\r\n}\r\n\r\n@media (min-width: 1280px) {\r\n}\r\n\r\n@media (min-width: 1536px) {\r\n}\r\n\r\n\r\n/* adds */\r\n.items-end {\r\n\talign-items: flex-end;\r\n}\r\n\r\n.hover\\:translate-x-6:hover {\r\n\t--transform-translate-x: 0.6rem;\r\n}\r\n\r\n.duration-130 {\r\n\ttransition-duration: 130ms;\r\n}\r\n\r\n.justify-between {\r\n\tjustify-content: space-between;\r\n}\r\n\r\n.pl-1 {\r\n\tpadding-left: 0.25rem;\r\n}\r\n\r\n.pl-2 {\r\n\tpadding-left: 0.50rem;\r\n}\r\n\r\n.pl-3 {\r\n\tpadding-left: 0.75rem;\r\n}\r\n\r\n.pl-4 {\r\n\tpadding-left: 1rem;\r\n}\r\n\r\n.pr-1 {\r\n\tpadding-right: 0.25rem;\r\n}\r\n\r\n.pr-2 {\r\n\tpadding-right: 0.50rem;\r\n}\r\n\r\n.pr-3 {\r\n\tpadding-right: 0.75rem;\r\n}\r\n\r\n.pr-4 {\r\n\tpadding-right: 1rem;\r\n}\r\n\r\n.pb-1 {\r\n\tpadding-bottom: 0.25rem;\r\n}\r\n\r\n.pb-0-5 {\r\n\tpadding-bottom: 0.12rem;\r\n}\r\n\r\n.pb-2 {\r\n\tpadding-bottom: 0.50rem;\r\n}\r\n\r\n.pb-3 {\r\n\tpadding-bottom: 0.75rem;\r\n}\r\n\r\n.background {\r\n\tbackground: radial-gradient(#009345, #106B4E);\r\n}\r\n\r\n\r\n/* add animations */\r\n/* buzz */\r\n@-webkit-keyframes delete-btn {\r\n  50% {\r\n    transform: translateX(3px) rotate(2deg);\r\n  }\r\n  100% {\r\n    transform: translateX(-3px) rotate(-2deg);\r\n  }\r\n}\r\n@keyframes delete-btn {\r\n  50% {\r\n    transform: translateX(3px) rotate(2deg);\r\n  }\r\n  100% {\r\n    transform: translateX(-3px) rotate(-2deg);\r\n  }\r\n}\r\n.delete-btn {\r\n  display: inline-block;\r\n  vertical-align: middle;\r\n  transform: perspective(1px) translateZ(0);\r\n  box-shadow: 0 0 1px rgba(0, 0, 0, 0);\r\n}\r\n.delete-btn:hover, .delete-btn:focus, .delete-btn:active {\r\n  -webkit-animation-name: delete-btn;\r\n  animation-name: delete-btn;\r\n  -webkit-animation-duration: 0.15s;\r\n  animation-duration: 0.15s;\r\n  -webkit-animation-timing-function: linear;\r\n  animation-timing-function: linear;\r\n  -webkit-animation-iteration-count: infinite;\r\n  animation-iteration-count: infinite;\r\n}\r\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -20320,7 +21038,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.list-enter-active[data-v-f348271a],\r\n.list-leave-active[data-v-f348271a] {\r\n  transition: all 0.15s;\n}\n.list-enter-from[data-v-f348271a],\r\n.list-leave-to[data-v-f348271a] {\r\n  opacity: 0;\r\n  transform: scale(0.75);\n}\n#overlay[data-v-f348271a] {\r\n  transform: scale(1);\n}\r\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "\n.list-enter-active[data-v-f348271a],\r\n.list-leave-active[data-v-f348271a] {\r\n  transition: all 0.15s;\n}\n.list-enter-from[data-v-f348271a],\r\n.list-leave-to[data-v-f348271a] {\r\n  opacity: 0;\r\n  transform: scale(0.75);\n}\n#overlay[data-v-f348271a] {\r\n  transform: scale(1);\n}\r\n\r\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -20418,6 +21136,79 @@ var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBP
 ___CSS_LOADER_EXPORT___.push([module.id, "@import url(//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css);"]);
 // Module
 ___CSS_LOADER_EXPORT___.push([module.id, "\n.alert[data-v-9f5311f8] {\r\n  padding: 10px;\r\n  font-weight: bold;\r\n  border-radius: 3px 3px 3px 3px;\r\n  position: absolute;\r\n  top: 2%;\r\n  margin-left: -96.48px;\r\n  left: 50%;\n}\n.successMsg[data-v-9f5311f8] {\r\n  color: rgb(255, 255, 255);\r\n  background-color: #8bdb00;\n}\n.errorMsg[data-v-9f5311f8] {\r\n  color: #ffffff;\r\n  background-color: #c51e1e;\n}\n.cursor[data-v-9f5311f8] {\r\n  cursor: pointer;\n}\n.cursor[data-v-9f5311f8]:hover {\r\n  color: #bada55;\n}\r\n", ""]);
+// Exports
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
+
+
+/***/ }),
+
+/***/ "./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/AuthForm.vue?vue&type=style&index=0&id=0165cd10&scoped=true&lang=css":
+/*!********************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/AuthForm.vue?vue&type=style&index=0&id=0165cd10&scoped=true&lang=css ***!
+  \********************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../../node_modules/css-loader/dist/runtime/api.js */ "./node_modules/css-loader/dist/runtime/api.js");
+/* harmony import */ var _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0__);
+// Imports
+
+var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
+___CSS_LOADER_EXPORT___.push([module.id, "@import url(https://use.fontawesome.com/releases/v5.8.2/css/all.css);"]);
+// Module
+___CSS_LOADER_EXPORT___.push([module.id, "\n.container[data-v-0165cd10] {\r\n    position: relative;\r\n    font-family: 'Noto Sans', sans-serif;\r\n    font-size: 1rem;\r\n    color: #333;\r\n    width: 100%;\r\n    min-height: 100vh;\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: center;\r\n    background: radial-gradient(#009345, #106B4E);\n}\n.container #progress[data-v-0165cd10] {\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    width: 0%;\r\n    height: 100vh;\r\n    background-color: #106B4E;\r\n    transition: width 0.8s ease-in-out;\n}\nh1[data-v-0165cd10] {\r\n    position: absolute;\r\n    width: -webkit-max-content;\r\n    width: -moz-max-content;\r\n    width: max-content;\r\n    font-size: 2rem;\r\n    color: #fff;\r\n    opacity: 0;\r\n    transition: 0.8s ease-in-out;\n}\nh1.show-final[data-v-0165cd10] {\r\n    opacity: 1;\n}\r\n", ""]);
+// Exports
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
+
+
+/***/ }),
+
+/***/ "./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/LoginForm.vue?vue&type=style&index=0&id=5547a011&scoped=true&lang=css":
+/*!*********************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/LoginForm.vue?vue&type=style&index=0&id=5547a011&scoped=true&lang=css ***!
+  \*********************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../../node_modules/css-loader/dist/runtime/api.js */ "./node_modules/css-loader/dist/runtime/api.js");
+/* harmony import */ var _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0__);
+// Imports
+
+var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
+// Module
+___CSS_LOADER_EXPORT___.push([module.id, "\n#login[data-v-5547a011] {\r\n  position: relative;\r\n  width: 480px;\r\n  height: 80px;\r\n  padding: 10px;\r\n  background-color: #fff;\r\n  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2), 0 10px 10px rgba(0, 0, 0, 0.2);\n}\n#login.close[data-v-5547a011] {\r\n  width: 0;\r\n  padding: 10px 0;\r\n  overflow: hidden;\r\n  transition: 0.8s ease-in-out;\r\n  box-shadow: 0 16px 24px 2px rgba(0, 0, 0, 0.2);\n}\n.previousButton[data-v-5547a011] {\r\n  position: absolute;\r\n  left: 30px;\r\n  top: 12px;\r\n  font-size: 1rem;\r\n  color: #9e9e9e;\r\n  cursor: pointer;\r\n  z-index: 20;\n}\n.previousButton[data-v-5547a011]:hover {\r\n  color: #009345;\n}\n.forwardButton[data-v-5547a011] {\r\n  position: absolute;\r\n  top: 30px;\r\n  right: 20px;\r\n  font-size: 3rem;\r\n  color: #106B4E;\r\n  cursor: pointer;\r\n  z-index: 20;\n}\n.forwardButton[data-v-5547a011]:hover {\r\n  color: #009345;\n}\n.wrong .forwardButton[data-v-5547a011] {\r\n  color: #D93F38;\n}\n.close .forwardButton[data-v-5547a011], .close .previousButton[data-v-5547a011] {\r\n  color: #fff;\n}\n#inputContainer[data-v-5547a011] {\r\n  position: relative;\r\n  padding: 30px 20px 20px 20px;\r\n  margin-right: 60px;\r\n  opacity: 0;\r\n  transition: opacity 0.3s ease-in-out;\n}\n#inputContainer input[data-v-5547a011] {\r\n  position: relative;\r\n  width: 100%;\r\n  font-size: 1.35rem;\r\n  font-weight: bold;\r\n  outline: 0;\r\n  background: transparent;\r\n  box-shadow: none;\r\n  border: none;\n}\n#inputContainer input:valid + #inputLabel[data-v-5547a011] {\r\n  top: 3px;\r\n  left: 42px;\r\n  font-size: 0.7rem;\r\n  font-weight: normal;\r\n  color: #999;\n}\n#inputLabel[data-v-5547a011] {\r\n  position: absolute;\r\n  top: 32px;\r\n  left: 20px;\r\n  font-size: 1.35rem;\r\n  font-weight: bold;\r\n  pointer-events: none;\r\n  transition: 0.2s ease-in-out;\n}\n#inputProgress[data-v-5547a011] {\r\n  width: 0%;\r\n  border-bottom: 6px solid #106B4E;\r\n  transition: width 0.6s ease-in-out;\n}\n.wrong #inputProgress[data-v-5547a011] {\r\n  border-color: #D93F38;\n}\n.showContainer[data-v-5547a011] {\r\n  opacity: 1 !important;\n}\n.showContainer #inputProgress[data-v-5547a011] {\r\n  width: 100%;\n}\n.wronganimation[data-v-5547a011] {\r\n  -webkit-animation: 0.5s linear 0s 1 wrong-animation-5547a011;\r\n          animation: 0.5s linear 0s 1 wrong-animation-5547a011;\n}\n.okanimation[data-v-5547a011] {\r\n  -webkit-animation: 0.2s linear 0s 1 ok-animation-5547a011;\r\n          animation: 0.2s linear 0s 1 ok-animation-5547a011;\n}\n@-webkit-keyframes wrong-animation-5547a011 {\n0% {\r\n    transform: translateX(0);\n}\n20% {\r\n    transform: translateX(-20px);\n}\n40% {\r\n    transform: translateX(20px);\n}\n60% {\r\n    transform: translateX(-20px);\n}\n80% {\r\n    transform: translateX(20px);\n}\n100% {\r\n    transform: translateX(0);\n}\n}\n@keyframes wrong-animation-5547a011 {\n0% {\r\n    transform: translateX(0);\n}\n20% {\r\n    transform: translateX(-20px);\n}\n40% {\r\n    transform: translateX(20px);\n}\n60% {\r\n    transform: translateX(-20px);\n}\n80% {\r\n    transform: translateX(20px);\n}\n100% {\r\n    transform: translateX(0);\n}\n}\n@-webkit-keyframes ok-animation-5547a011 {\n0% {\r\n    transform: translateY(0);\n}\n50% {\r\n    transform: translateY(10px);\n}\n100% {\r\n    transform: translateY(0);\n}\n}\n@keyframes ok-animation-5547a011 {\n0% {\r\n    transform: translateY(0);\n}\n50% {\r\n    transform: translateY(10px);\n}\n100% {\r\n    transform: translateY(0);\n}\n}\n.FormLabel[data-v-5547a011] {\r\n  position: absolute;\r\n  color: white;\r\n  font-size: 25px;\r\n  font-weight: bold;\r\n  top: -55%;\r\n  left: 0%;\n}\n.linkToLogin[data-v-5547a011] {\r\n  position: absolute;\r\n  color: white;\r\n  top: 85%;\r\n  left: 0%;\r\n  opacity: 0.5;\r\n  transition: 0.3s ease-in-out;\n}\n.linkToLogin[data-v-5547a011]:hover {\r\n  cursor: pointer;\r\n  opacity: 1;\r\n  transform: scale(1.10);\n}\r\n", ""]);
+// Exports
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
+
+
+/***/ }),
+
+/***/ "./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/RegisterForm.vue?vue&type=style&index=0&id=5d1a151a&scoped=true&lang=css":
+/*!************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/RegisterForm.vue?vue&type=style&index=0&id=5d1a151a&scoped=true&lang=css ***!
+  \************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../../node_modules/css-loader/dist/runtime/api.js */ "./node_modules/css-loader/dist/runtime/api.js");
+/* harmony import */ var _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0__);
+// Imports
+
+var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
+// Module
+___CSS_LOADER_EXPORT___.push([module.id, "\n#register[data-v-5d1a151a] {\r\n  position: relative;\r\n  width: 480px;\r\n  height: 80px;\r\n  padding: 10px;\r\n  background-color: #fff;\r\n  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2), 0 10px 10px rgba(0, 0, 0, 0.2);\n}\n#register.close[data-v-5d1a151a] {\r\n  width: 0;\r\n  padding: 10px 0;\r\n  overflow: hidden;\r\n  transition: 0.8s ease-in-out;\r\n  box-shadow: 0 16px 24px 2px rgba(0, 0, 0, 0.2);\n}\n.previousButton[data-v-5d1a151a] {\r\n  position: absolute;\r\n  left: 30px;\r\n  top: 12px;\r\n  font-size: 1rem;\r\n  color: #9e9e9e;\r\n  cursor: pointer;\r\n  z-index: 20;\n}\n.previousButton[data-v-5d1a151a]:hover {\r\n  color: #009345;\n}\n.forwardButton[data-v-5d1a151a] {\r\n  position: absolute;\r\n  top: 30px;\r\n  right: 20px;\r\n  font-size: 3rem;\r\n  color: #106B4E;\r\n  cursor: pointer;\r\n  z-index: 20;\n}\n.forwardButton[data-v-5d1a151a]:hover {\r\n  color: #009345;\n}\n.wrong .forwardButton[data-v-5d1a151a] {\r\n  color: #D93F38;\n}\n.close .forwardButton[data-v-5d1a151a], .close .previousButton[data-v-5d1a151a] {\r\n  color: #fff;\n}\n#inputContainer[data-v-5d1a151a] {\r\n  position: relative;\r\n  padding: 30px 20px 20px 20px;\r\n  margin-right: 60px;\r\n  opacity: 0;\r\n  transition: opacity 0.3s ease-in-out;\n}\n#inputContainer input[data-v-5d1a151a] {\r\n  position: relative;\r\n  width: 100%;\r\n  font-size: 1.35rem;\r\n  font-weight: bold;\r\n  outline: 0;\r\n  background: transparent;\r\n  box-shadow: none;\r\n  border: none;\n}\n#inputContainer input:valid + #inputLabel[data-v-5d1a151a] {\r\n  top: 3px;\r\n  left: 42px;\r\n  font-size: 0.7rem;\r\n  font-weight: normal;\r\n  color: #999;\n}\n#inputLabel[data-v-5d1a151a] {\r\n  position: absolute;\r\n  top: 32px;\r\n  left: 20px;\r\n  font-size: 1.35rem;\r\n  font-weight: bold;\r\n  pointer-events: none;\r\n  transition: 0.2s ease-in-out;\n}\n#inputProgress[data-v-5d1a151a] {\r\n  width: 0%;\r\n  border-bottom: 6px solid #106B4E;\r\n  transition: width 0.6s ease-in-out;\n}\n.wrong #inputProgress[data-v-5d1a151a] {\r\n  border-color: #D93F38;\n}\n.showContainer[data-v-5d1a151a] {\r\n  opacity: 1 !important;\n}\n.showContainer #inputProgress[data-v-5d1a151a] {\r\n  width: 100%;\n}\n.wronganimation[data-v-5d1a151a] {\r\n  -webkit-animation: 0.5s linear 0s 1 wrong-animation-5d1a151a;\r\n          animation: 0.5s linear 0s 1 wrong-animation-5d1a151a;\n}\n.okanimation[data-v-5d1a151a] {\r\n  -webkit-animation: 0.2s linear 0s 1 ok-animation-5d1a151a;\r\n          animation: 0.2s linear 0s 1 ok-animation-5d1a151a;\n}\n@-webkit-keyframes wrong-animation-5d1a151a {\n0% {\r\n    transform: translateX(0);\n}\n20% {\r\n    transform: translateX(-20px);\n}\n40% {\r\n    transform: translateX(20px);\n}\n60% {\r\n    transform: translateX(-20px);\n}\n80% {\r\n    transform: translateX(20px);\n}\n100% {\r\n    transform: translateX(0);\n}\n}\n@keyframes wrong-animation-5d1a151a {\n0% {\r\n    transform: translateX(0);\n}\n20% {\r\n    transform: translateX(-20px);\n}\n40% {\r\n    transform: translateX(20px);\n}\n60% {\r\n    transform: translateX(-20px);\n}\n80% {\r\n    transform: translateX(20px);\n}\n100% {\r\n    transform: translateX(0);\n}\n}\n@-webkit-keyframes ok-animation-5d1a151a {\n0% {\r\n    transform: translateY(0);\n}\n50% {\r\n    transform: translateY(10px);\n}\n100% {\r\n    transform: translateY(0);\n}\n}\n@keyframes ok-animation-5d1a151a {\n0% {\r\n    transform: translateY(0);\n}\n50% {\r\n    transform: translateY(10px);\n}\n100% {\r\n    transform: translateY(0);\n}\n}\n.FormLabel[data-v-5d1a151a] {\r\n  position: absolute;\r\n  color: white;\r\n  font-size: 25px;\r\n  font-weight: bold;\r\n  top: -55%;\r\n  left: 0%;\n}\n.linkToLogin[data-v-5d1a151a] {\r\n  position: absolute;\r\n  color: white;\r\n  top: 85%;\r\n  left: 0%;\r\n  opacity: 0.5;\r\n  transition: 0.3s ease-in-out;\n}\n.linkToLogin[data-v-5d1a151a]:hover {\r\n  cursor: pointer;\r\n  opacity: 1;\r\n  transform: scale(1.10);\n}\r\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -38099,6 +38890,96 @@ var update = _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js
 
 /***/ }),
 
+/***/ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/AuthForm.vue?vue&type=style&index=0&id=0165cd10&scoped=true&lang=css":
+/*!************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/AuthForm.vue?vue&type=style&index=0&id=0165cd10&scoped=true&lang=css ***!
+  \************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! !../../../../node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js */ "./node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js");
+/* harmony import */ var _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_AuthForm_vue_vue_type_style_index_0_id_0165cd10_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! !!../../../../node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!../../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./AuthForm.vue?vue&type=style&index=0&id=0165cd10&scoped=true&lang=css */ "./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/AuthForm.vue?vue&type=style&index=0&id=0165cd10&scoped=true&lang=css");
+
+            
+
+var options = {};
+
+options.insert = "head";
+options.singleton = false;
+
+var update = _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0___default()(_node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_AuthForm_vue_vue_type_style_index_0_id_0165cd10_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_1__["default"], options);
+
+
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (_node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_AuthForm_vue_vue_type_style_index_0_id_0165cd10_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_1__["default"].locals || {});
+
+/***/ }),
+
+/***/ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/LoginForm.vue?vue&type=style&index=0&id=5547a011&scoped=true&lang=css":
+/*!*************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/LoginForm.vue?vue&type=style&index=0&id=5547a011&scoped=true&lang=css ***!
+  \*************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! !../../../../node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js */ "./node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js");
+/* harmony import */ var _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_LoginForm_vue_vue_type_style_index_0_id_5547a011_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! !!../../../../node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!../../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./LoginForm.vue?vue&type=style&index=0&id=5547a011&scoped=true&lang=css */ "./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/LoginForm.vue?vue&type=style&index=0&id=5547a011&scoped=true&lang=css");
+
+            
+
+var options = {};
+
+options.insert = "head";
+options.singleton = false;
+
+var update = _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0___default()(_node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_LoginForm_vue_vue_type_style_index_0_id_5547a011_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_1__["default"], options);
+
+
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (_node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_LoginForm_vue_vue_type_style_index_0_id_5547a011_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_1__["default"].locals || {});
+
+/***/ }),
+
+/***/ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/RegisterForm.vue?vue&type=style&index=0&id=5d1a151a&scoped=true&lang=css":
+/*!****************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/RegisterForm.vue?vue&type=style&index=0&id=5d1a151a&scoped=true&lang=css ***!
+  \****************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! !../../../../node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js */ "./node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js");
+/* harmony import */ var _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_RegisterForm_vue_vue_type_style_index_0_id_5d1a151a_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! !!../../../../node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!../../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./RegisterForm.vue?vue&type=style&index=0&id=5d1a151a&scoped=true&lang=css */ "./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/RegisterForm.vue?vue&type=style&index=0&id=5d1a151a&scoped=true&lang=css");
+
+            
+
+var options = {};
+
+options.insert = "head";
+options.singleton = false;
+
+var update = _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0___default()(_node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_RegisterForm_vue_vue_type_style_index_0_id_5d1a151a_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_1__["default"], options);
+
+
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (_node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_RegisterForm_vue_vue_type_style_index_0_id_5d1a151a_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_1__["default"].locals || {});
+
+/***/ }),
+
 /***/ "./node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js":
 /*!****************************************************************************!*\
   !*** ./node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js ***!
@@ -38608,6 +39489,99 @@ if (false) {}
 
 /***/ }),
 
+/***/ "./resources/js/components/auth/AuthForm.vue":
+/*!***************************************************!*\
+  !*** ./resources/js/components/auth/AuthForm.vue ***!
+  \***************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _AuthForm_vue_vue_type_template_id_0165cd10_scoped_true__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./AuthForm.vue?vue&type=template&id=0165cd10&scoped=true */ "./resources/js/components/auth/AuthForm.vue?vue&type=template&id=0165cd10&scoped=true");
+/* harmony import */ var _AuthForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./AuthForm.vue?vue&type=script&lang=js */ "./resources/js/components/auth/AuthForm.vue?vue&type=script&lang=js");
+/* harmony import */ var _AuthForm_vue_vue_type_style_index_0_id_0165cd10_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./AuthForm.vue?vue&type=style&index=0&id=0165cd10&scoped=true&lang=css */ "./resources/js/components/auth/AuthForm.vue?vue&type=style&index=0&id=0165cd10&scoped=true&lang=css");
+/* harmony import */ var C_xampp_htdocs_API_laravel_VUE_1_node_modules_vue_loader_dist_exportHelper_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./node_modules/vue-loader/dist/exportHelper.js */ "./node_modules/vue-loader/dist/exportHelper.js");
+
+
+
+
+;
+
+
+const __exports__ = /*#__PURE__*/(0,C_xampp_htdocs_API_laravel_VUE_1_node_modules_vue_loader_dist_exportHelper_js__WEBPACK_IMPORTED_MODULE_3__["default"])(_AuthForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_1__["default"], [['render',_AuthForm_vue_vue_type_template_id_0165cd10_scoped_true__WEBPACK_IMPORTED_MODULE_0__.render],['__scopeId',"data-v-0165cd10"],['__file',"resources/js/components/auth/AuthForm.vue"]])
+/* hot reload */
+if (false) {}
+
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (__exports__);
+
+/***/ }),
+
+/***/ "./resources/js/components/auth/LoginForm.vue":
+/*!****************************************************!*\
+  !*** ./resources/js/components/auth/LoginForm.vue ***!
+  \****************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _LoginForm_vue_vue_type_template_id_5547a011_scoped_true__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./LoginForm.vue?vue&type=template&id=5547a011&scoped=true */ "./resources/js/components/auth/LoginForm.vue?vue&type=template&id=5547a011&scoped=true");
+/* harmony import */ var _LoginForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./LoginForm.vue?vue&type=script&lang=js */ "./resources/js/components/auth/LoginForm.vue?vue&type=script&lang=js");
+/* harmony import */ var _LoginForm_vue_vue_type_style_index_0_id_5547a011_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./LoginForm.vue?vue&type=style&index=0&id=5547a011&scoped=true&lang=css */ "./resources/js/components/auth/LoginForm.vue?vue&type=style&index=0&id=5547a011&scoped=true&lang=css");
+/* harmony import */ var C_xampp_htdocs_API_laravel_VUE_1_node_modules_vue_loader_dist_exportHelper_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./node_modules/vue-loader/dist/exportHelper.js */ "./node_modules/vue-loader/dist/exportHelper.js");
+
+
+
+
+;
+
+
+const __exports__ = /*#__PURE__*/(0,C_xampp_htdocs_API_laravel_VUE_1_node_modules_vue_loader_dist_exportHelper_js__WEBPACK_IMPORTED_MODULE_3__["default"])(_LoginForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_1__["default"], [['render',_LoginForm_vue_vue_type_template_id_5547a011_scoped_true__WEBPACK_IMPORTED_MODULE_0__.render],['__scopeId',"data-v-5547a011"],['__file',"resources/js/components/auth/LoginForm.vue"]])
+/* hot reload */
+if (false) {}
+
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (__exports__);
+
+/***/ }),
+
+/***/ "./resources/js/components/auth/RegisterForm.vue":
+/*!*******************************************************!*\
+  !*** ./resources/js/components/auth/RegisterForm.vue ***!
+  \*******************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _RegisterForm_vue_vue_type_template_id_5d1a151a_scoped_true__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./RegisterForm.vue?vue&type=template&id=5d1a151a&scoped=true */ "./resources/js/components/auth/RegisterForm.vue?vue&type=template&id=5d1a151a&scoped=true");
+/* harmony import */ var _RegisterForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./RegisterForm.vue?vue&type=script&lang=js */ "./resources/js/components/auth/RegisterForm.vue?vue&type=script&lang=js");
+/* harmony import */ var _RegisterForm_vue_vue_type_style_index_0_id_5d1a151a_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./RegisterForm.vue?vue&type=style&index=0&id=5d1a151a&scoped=true&lang=css */ "./resources/js/components/auth/RegisterForm.vue?vue&type=style&index=0&id=5d1a151a&scoped=true&lang=css");
+/* harmony import */ var C_xampp_htdocs_API_laravel_VUE_1_node_modules_vue_loader_dist_exportHelper_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./node_modules/vue-loader/dist/exportHelper.js */ "./node_modules/vue-loader/dist/exportHelper.js");
+
+
+
+
+;
+
+
+const __exports__ = /*#__PURE__*/(0,C_xampp_htdocs_API_laravel_VUE_1_node_modules_vue_loader_dist_exportHelper_js__WEBPACK_IMPORTED_MODULE_3__["default"])(_RegisterForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_1__["default"], [['render',_RegisterForm_vue_vue_type_template_id_5d1a151a_scoped_true__WEBPACK_IMPORTED_MODULE_0__.render],['__scopeId',"data-v-5d1a151a"],['__file',"resources/js/components/auth/RegisterForm.vue"]])
+/* hot reload */
+if (false) {}
+
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (__exports__);
+
+/***/ }),
+
 /***/ "./resources/js/App.vue?vue&type=script&lang=js":
 /*!******************************************************!*\
   !*** ./resources/js/App.vue?vue&type=script&lang=js ***!
@@ -38700,6 +39674,54 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (/* reexport safe */ _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_ShowAlert_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_0__["default"])
 /* harmony export */ });
 /* harmony import */ var _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_ShowAlert_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./ShowAlert.vue?vue&type=script&lang=js */ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/ShowAlert.vue?vue&type=script&lang=js");
+ 
+
+/***/ }),
+
+/***/ "./resources/js/components/auth/AuthForm.vue?vue&type=script&lang=js":
+/*!***************************************************************************!*\
+  !*** ./resources/js/components/auth/AuthForm.vue?vue&type=script&lang=js ***!
+  \***************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* reexport safe */ _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_AuthForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_0__["default"])
+/* harmony export */ });
+/* harmony import */ var _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_AuthForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./AuthForm.vue?vue&type=script&lang=js */ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/AuthForm.vue?vue&type=script&lang=js");
+ 
+
+/***/ }),
+
+/***/ "./resources/js/components/auth/LoginForm.vue?vue&type=script&lang=js":
+/*!****************************************************************************!*\
+  !*** ./resources/js/components/auth/LoginForm.vue?vue&type=script&lang=js ***!
+  \****************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* reexport safe */ _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_LoginForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_0__["default"])
+/* harmony export */ });
+/* harmony import */ var _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_LoginForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./LoginForm.vue?vue&type=script&lang=js */ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/LoginForm.vue?vue&type=script&lang=js");
+ 
+
+/***/ }),
+
+/***/ "./resources/js/components/auth/RegisterForm.vue?vue&type=script&lang=js":
+/*!*******************************************************************************!*\
+  !*** ./resources/js/components/auth/RegisterForm.vue?vue&type=script&lang=js ***!
+  \*******************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* reexport safe */ _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_RegisterForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_0__["default"])
+/* harmony export */ });
+/* harmony import */ var _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_RegisterForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./RegisterForm.vue?vue&type=script&lang=js */ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/RegisterForm.vue?vue&type=script&lang=js");
  
 
 /***/ }),
@@ -38816,6 +39838,54 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./resources/js/components/auth/AuthForm.vue?vue&type=template&id=0165cd10&scoped=true":
+/*!*********************************************************************************************!*\
+  !*** ./resources/js/components/auth/AuthForm.vue?vue&type=template&id=0165cd10&scoped=true ***!
+  \*********************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* reexport safe */ _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_templateLoader_js_ruleSet_1_rules_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_AuthForm_vue_vue_type_template_id_0165cd10_scoped_true__WEBPACK_IMPORTED_MODULE_0__.render)
+/* harmony export */ });
+/* harmony import */ var _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_templateLoader_js_ruleSet_1_rules_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_AuthForm_vue_vue_type_template_id_0165cd10_scoped_true__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!../../../../node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./AuthForm.vue?vue&type=template&id=0165cd10&scoped=true */ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/AuthForm.vue?vue&type=template&id=0165cd10&scoped=true");
+
+
+/***/ }),
+
+/***/ "./resources/js/components/auth/LoginForm.vue?vue&type=template&id=5547a011&scoped=true":
+/*!**********************************************************************************************!*\
+  !*** ./resources/js/components/auth/LoginForm.vue?vue&type=template&id=5547a011&scoped=true ***!
+  \**********************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* reexport safe */ _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_templateLoader_js_ruleSet_1_rules_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_LoginForm_vue_vue_type_template_id_5547a011_scoped_true__WEBPACK_IMPORTED_MODULE_0__.render)
+/* harmony export */ });
+/* harmony import */ var _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_templateLoader_js_ruleSet_1_rules_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_LoginForm_vue_vue_type_template_id_5547a011_scoped_true__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!../../../../node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./LoginForm.vue?vue&type=template&id=5547a011&scoped=true */ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/LoginForm.vue?vue&type=template&id=5547a011&scoped=true");
+
+
+/***/ }),
+
+/***/ "./resources/js/components/auth/RegisterForm.vue?vue&type=template&id=5d1a151a&scoped=true":
+/*!*************************************************************************************************!*\
+  !*** ./resources/js/components/auth/RegisterForm.vue?vue&type=template&id=5d1a151a&scoped=true ***!
+  \*************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* reexport safe */ _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_templateLoader_js_ruleSet_1_rules_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_RegisterForm_vue_vue_type_template_id_5d1a151a_scoped_true__WEBPACK_IMPORTED_MODULE_0__.render)
+/* harmony export */ });
+/* harmony import */ var _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_templateLoader_js_ruleSet_1_rules_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_RegisterForm_vue_vue_type_template_id_5d1a151a_scoped_true__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!../../../../node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./RegisterForm.vue?vue&type=template&id=5d1a151a&scoped=true */ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/RegisterForm.vue?vue&type=template&id=5d1a151a&scoped=true");
+
+
+/***/ }),
+
 /***/ "./resources/js/App.vue?vue&type=style&index=0&id=f348271a&scoped=true&lang=css":
 /*!**************************************************************************************!*\
   !*** ./resources/js/App.vue?vue&type=style&index=0&id=f348271a&scoped=true&lang=css ***!
@@ -38877,6 +39947,45 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _node_modules_style_loader_dist_cjs_js_node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_ShowAlert_vue_vue_type_style_index_0_id_9f5311f8_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../node_modules/style-loader/dist/cjs.js!../../../node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./ShowAlert.vue?vue&type=style&index=0&id=9f5311f8&scoped=true&lang=css */ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/ShowAlert.vue?vue&type=style&index=0&id=9f5311f8&scoped=true&lang=css");
+
+
+/***/ }),
+
+/***/ "./resources/js/components/auth/AuthForm.vue?vue&type=style&index=0&id=0165cd10&scoped=true&lang=css":
+/*!***********************************************************************************************************!*\
+  !*** ./resources/js/components/auth/AuthForm.vue?vue&type=style&index=0&id=0165cd10&scoped=true&lang=css ***!
+  \***********************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _node_modules_style_loader_dist_cjs_js_node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_AuthForm_vue_vue_type_style_index_0_id_0165cd10_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../node_modules/style-loader/dist/cjs.js!../../../../node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!../../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./AuthForm.vue?vue&type=style&index=0&id=0165cd10&scoped=true&lang=css */ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/AuthForm.vue?vue&type=style&index=0&id=0165cd10&scoped=true&lang=css");
+
+
+/***/ }),
+
+/***/ "./resources/js/components/auth/LoginForm.vue?vue&type=style&index=0&id=5547a011&scoped=true&lang=css":
+/*!************************************************************************************************************!*\
+  !*** ./resources/js/components/auth/LoginForm.vue?vue&type=style&index=0&id=5547a011&scoped=true&lang=css ***!
+  \************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _node_modules_style_loader_dist_cjs_js_node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_LoginForm_vue_vue_type_style_index_0_id_5547a011_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../node_modules/style-loader/dist/cjs.js!../../../../node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!../../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./LoginForm.vue?vue&type=style&index=0&id=5547a011&scoped=true&lang=css */ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/LoginForm.vue?vue&type=style&index=0&id=5547a011&scoped=true&lang=css");
+
+
+/***/ }),
+
+/***/ "./resources/js/components/auth/RegisterForm.vue?vue&type=style&index=0&id=5d1a151a&scoped=true&lang=css":
+/*!***************************************************************************************************************!*\
+  !*** ./resources/js/components/auth/RegisterForm.vue?vue&type=style&index=0&id=5d1a151a&scoped=true&lang=css ***!
+  \***************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _node_modules_style_loader_dist_cjs_js_node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_RegisterForm_vue_vue_type_style_index_0_id_5d1a151a_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../node_modules/style-loader/dist/cjs.js!../../../../node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!../../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!../../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./RegisterForm.vue?vue&type=style&index=0&id=5d1a151a&scoped=true&lang=css */ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/auth/RegisterForm.vue?vue&type=style&index=0&id=5d1a151a&scoped=true&lang=css");
 
 
 /***/ }),

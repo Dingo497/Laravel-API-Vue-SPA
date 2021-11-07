@@ -17,22 +17,18 @@ use App\Http\Controllers\TodoListController;
 |
 */
 
-// Route::middleware('auth:sanctum')->get('/profile', function (Request $request) {
-//     return $request->user();
-// });
-
 Route::post('/register', [AuthController::class, 'register'])->name('register');
-
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 
-Route::post('/profile', [AuthController::class, 'profile'])->middleware('auth:sanctum')->name('profile');
 
-Route::resource('todo-lists', TodoListController::class)->only([
-    'index', 'show', 'store', 'update', 'destroy'
-]);
+Route::group(['middleware' => ['auth:sanctum']], function() {
+    Route::post('/profile', [AuthController::class, 'profile'])->name('profile');
 
-Route::get('todo-list', [TodoListController::class, 'showLast'])->name('todo-lists.showLast');
+    Route::resource('todo-lists', TodoListController::class)->only([
+        'index', 'show', 'store', 'update', 'destroy'
+    ]);
 
-Route::resource('cards', CardController::class)->only([
-    'index', 'show', 'store', 'update', 'destroy'
-]);
+    Route::resource('cards', CardController::class)->only([
+        'index', 'show', 'store', 'update', 'destroy'
+    ]);
+});

@@ -20,6 +20,13 @@
 import { validateLengthInputs } from '../functions/requests.js'
 
 export default {
+  // PROPS
+  props: {
+    accessToken: {
+      type: Object,
+    }
+  },
+
   // DATA
   data() {
     return {
@@ -44,7 +51,13 @@ export default {
       }
 
       axios
-        .post('http://127.0.0.1:8000/api/todo-lists?title=' + this.name)
+        .post('http://127.0.0.1:8000/api/todo-lists', {
+          title: this.name,
+        }, {
+          headers: {
+            Authorization: this.accessToken.token_type + ' ' + this.accessToken.access_token
+          }
+        })
         .then((response) => {
           window.mitter.emit('show-alert', { message: response.data.status.message, status: true })
         })

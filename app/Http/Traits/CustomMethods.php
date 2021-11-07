@@ -2,7 +2,7 @@
 
 namespace App\Http\Traits;
 
-trait CrudListsCards {
+trait CustomMethods {
   
   /**
    * Send Success Data/message in Json
@@ -27,15 +27,16 @@ trait CrudListsCards {
   /**
    * Send Error message in json
    * @param string $message
+   * @param integer $code
    * @return Response
    */
-  private function sendErrorMessage($message)
+  private function sendErrorMessage($message, $code = 404)
   {
     return response()->json([
       'status' => [
         'message' => $message
       ],
-    ], 404);
+    ], $code);
   }
 
 

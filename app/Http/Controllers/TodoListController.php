@@ -5,12 +5,12 @@ namespace App\Http\Controllers;
 // Models
 use App\Models\TodoList;
 use Illuminate\Http\Request;
-use App\Http\Traits\CrudListsCards;
+use App\Http\Traits\CustomMethods;
 
 
 class TodoListController extends Controller
 {
-  use CrudListsCards;
+  use CustomMethods;
 
   /**
    * Display a listing of the resource.
@@ -124,29 +124,6 @@ class TodoListController extends Controller
     // Delete List
     $list->delete();
     return $this->sendSuccessMessage(null, 'Your list was deleted');
-  }
-
-
-
-
-  /**
-   * Display a last list of the resource.
-   *
-   * @return \Illuminate\Http\Response
-   */
-  public function showLast()
-  {
-    // Get Lists
-    $lists = TodoList::latest()->first();
-    $lists = $lists->toArray();
-
-    // Send Json
-    if( ! $lists ) {
-      return $this->sendErrorMessage('Nothing Found');
-    } else {
-      $lists = $this->transformOne($lists);
-      return $this->sendSuccessMessage($lists, 'success');
-    }
   }
 
 }

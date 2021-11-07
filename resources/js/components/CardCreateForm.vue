@@ -51,7 +51,10 @@ import { validateLengthInputs } from '../functions/requests.js'
 export default {
   // PROPS
   props: {
-    listId: { type: Number }
+    listId: { type: Number },
+    accessToken: {
+      type: Object,
+    }
   },
 
 
@@ -93,7 +96,14 @@ export default {
       }
 
       axios
-        .post('http://127.0.0.1:8000/api/cards?title=' + this.text + '&todo_list_id=' + this.listId)
+        .post('http://127.0.0.1:8000/api/cards', {
+          title: this.text,
+          todo_list_id: this.listId,
+        }, {
+          headers: {
+            Authorization: this.accessToken.token_type + ' ' + this.accessToken.access_token
+          }
+        })
         .then((response) => {
           window.mitter.emit('show-alert', { message: response.data.status.message, status: true })
         })
