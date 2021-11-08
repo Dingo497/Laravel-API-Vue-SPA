@@ -24,6 +24,8 @@ Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::group(['middleware' => ['auth:sanctum']], function() {
     Route::post('/profile', [AuthController::class, 'profile'])->name('profile');
 
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
     Route::resource('todo-lists', TodoListController::class)->only([
         'index', 'show', 'store', 'update', 'destroy'
     ]);

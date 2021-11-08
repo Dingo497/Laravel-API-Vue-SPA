@@ -57,7 +57,7 @@ export default {
 }
 .successMsg {
   color: rgb(255, 255, 255);
-  background-color: #8bdb00;
+  background-color: #028946;
 }
 .errorMsg {
   color: #ffffff;

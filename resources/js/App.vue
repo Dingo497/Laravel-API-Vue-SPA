@@ -9,11 +9,25 @@
     v-if="loggedIn"
     class="flex min-h-screen background"
   >
+
+  <NavigationComponent
+    :accessToken="accessToken"
+    @logout-user="loggedIn = false"
+    @show-profile="showProfile($event)"
+  />
+
     <transition-group 
       tag="div" 
       name="list" 
       class="sm:flex items-start w-screen px-4 py-10 overflow-x-auto"
     >
+    
+    <UserProfile
+      v-if="showProfileOverlay"
+      :userData="userData"
+      @click="hideProfile()"
+    />
+
       <div
         v-if="overlay"
         id="overlay"
@@ -58,6 +72,8 @@ import List from './components/List.vue'
 import ListCreateForm from './components/ListCreateForm.vue'
 import ShowAlert from './components/ShowAlert.vue';
 import AuthForm from './components/auth/AuthForm.vue';
+import NavigationComponent from './components/navbar/NavigationComponent.vue';
+import UserProfile from './components/UserProfile.vue';
 
 export default {
   // COMPONENTS
@@ -66,6 +82,8 @@ export default {
     ListCreateForm,
     ShowAlert,
     AuthForm,
+    NavigationComponent,
+    UserProfile,
   },
 
 
@@ -76,6 +94,8 @@ export default {
       overlay: false,
       loggedIn: false,
       accessToken: {},
+      showProfileOverlay: false,
+      userData: {},
     }
   },
 
@@ -106,6 +126,17 @@ export default {
           window.mitter.emit('show-alert', { message: error.response.data.status.message, status: false })
         })
     },
+
+    showProfile(data) {
+      this.overlay = true
+      this.showProfileOverlay = true
+      this.userData = data
+    },
+
+    hideProfile() {
+      this.overlay = false
+      this.showProfileOverlay = false
+    }
   }
 
 }

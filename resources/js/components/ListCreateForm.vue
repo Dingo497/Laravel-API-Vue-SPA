@@ -27,13 +27,13 @@ export default {
     }
   },
 
+
   // DATA
   data() {
     return {
       name: ''
     }
   },
-
 
 
   // METHODS

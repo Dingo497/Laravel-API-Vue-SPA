@@ -53,7 +53,7 @@ class CardController extends Controller
 
     // Create Card
     Card::create($request->all());
-    return $this->sendSuccessMessage(null, 'Your list was created');
+    return $this->sendSuccessMessage(null, 'Your list has been created');
   }
 
 
@@ -106,7 +106,7 @@ class CardController extends Controller
     
     // Update card
     $card->update( $request->all() );
-    return $this->sendSuccessMessage(null, 'Your list was updated');
+    return $this->sendSuccessMessage(null, 'Your list has been updated');
   }
 
 
@@ -128,7 +128,7 @@ class CardController extends Controller
 
     // Delete card
     $card->delete();
-    return $this->sendSuccessMessage(null, 'Your card was deleted');
+    return $this->sendSuccessMessage(null, 'Your card has been deleted');
   }
 
 

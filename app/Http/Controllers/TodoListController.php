@@ -51,7 +51,7 @@ class TodoListController extends Controller
 
     // Create List
     TodoList::create($request->all());
-    return $this->sendSuccessMessage(null, 'Your list was created');
+    return $this->sendSuccessMessage(null, 'Your list has been created');
   }
 
 
@@ -101,7 +101,7 @@ class TodoListController extends Controller
     
     // Update List
     $list->update( $request->all() );
-    return $this->sendSuccessMessage(null, 'Your list was updated');
+    return $this->sendSuccessMessage(null, 'Your list has been updated');
   }
 
 
@@ -123,7 +123,7 @@ class TodoListController extends Controller
 
     // Delete List
     $list->delete();
-    return $this->sendSuccessMessage(null, 'Your list was deleted');
+    return $this->sendSuccessMessage(null, 'Your list has been deleted');
   }
 
 }
