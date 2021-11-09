@@ -58,7 +58,6 @@ export default {
   },
 
 
-
   // DATA
   data() {
     return {
@@ -68,7 +67,6 @@ export default {
   },
 
 
-
   // METHODS
   methods: {
     showForm() {
@@ -76,11 +74,9 @@ export default {
       setTimeout(() => this.$refs.focusTextArea.focus(), 0)
     },
 
-
     hideForm() {
       this.visible = false
     },
-
 
     /**
      * Validation Card

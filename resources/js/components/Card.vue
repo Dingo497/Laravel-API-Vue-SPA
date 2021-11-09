@@ -92,24 +92,20 @@ export default {
       window.mitter.emit('toggle-overlay', true)
     },
 
-
      undoPop() {
       this.isPopped = false
       window.mitter.emit('toggle-overlay', false)
     },
-
 
     editCard() {
       this.isEditing = true
       setTimeout(() => this.$refs.textCard.focus(), 0)
     },
 
-
     restorePreviousValue() {
       this.$refs.textCard.textContent = this.title
       this.isEditing = false
     },
-
 
     /**
      * Validation Input
@@ -146,7 +142,6 @@ export default {
       this.undoPop()
       this.$emit('card-edit')
     },
-
 
     /**
      * Delete Card from database

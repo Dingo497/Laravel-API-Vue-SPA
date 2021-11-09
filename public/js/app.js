@@ -19226,11 +19226,19 @@ __webpack_require__.r(__webpack_exports__);
         });
       });
     },
+
+    /**
+     * Show User Profile
+     */
     showProfile: function showProfile(data) {
       this.overlay = true;
       this.showProfileOverlay = true;
       this.userData = data;
     },
+
+    /**
+     * Hide User profile
+     */
     hideProfile: function hideProfile() {
       this.overlay = false;
       this.showProfileOverlay = false;
@@ -19724,10 +19732,12 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
+  // COMPONENTS
   components: {
     RegisterForm: _RegisterForm_vue__WEBPACK_IMPORTED_MODULE_0__["default"],
     LoginForm: _LoginForm_vue__WEBPACK_IMPORTED_MODULE_1__["default"]
   },
+  // DATAS
   data: function data() {
     return {
       progress: '0%',
@@ -19737,7 +19747,11 @@ __webpack_require__.r(__webpack_exports__);
       visible: true
     };
   },
+  // METHODS
   methods: {
+    /**
+     * Send Data to API, register new user and "redirect" to lists
+     */
     register: function register(data) {
       var _this = this;
 
@@ -19756,6 +19770,10 @@ __webpack_require__.r(__webpack_exports__);
         }, 3000);
       });
     },
+
+    /**
+     * Send Data to API, login user and "redirect" to lists
+     */
     login: function login(data) {
       var _this2 = this;
 
@@ -21267,7 +21285,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.list-enter-active[data-v-f348271a],\r\n.list-leave-active[data-v-f348271a] {\r\n  transition: all 0.15s;\n}\n.list-enter-from[data-v-f348271a],\r\n.list-leave-to[data-v-f348271a] {\r\n  opacity: 0;\r\n  transform: scale(0.75);\n}\n#overlay[data-v-f348271a] {\r\n  transform: scale(1);\n}\r\n\r\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "\n.list-enter-active[data-v-f348271a],\r\n.list-leave-active[data-v-f348271a] {\r\n  transition: all 0.15s;\n}\n.list-enter-from[data-v-f348271a],\r\n.list-leave-to[data-v-f348271a] {\r\n  opacity: 0;\r\n  transform: scale(0.75);\n}\n#overlay[data-v-f348271a] {\r\n  transform: scale(1);\n}\r\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 

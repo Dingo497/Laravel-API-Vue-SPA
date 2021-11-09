@@ -83,7 +83,6 @@ export default {
   },
 
 
-
   // PROPS
   props: {
     name: {
@@ -101,7 +100,6 @@ export default {
   },
 
 
-
   // DATA
   data() {
     return {
@@ -110,20 +108,17 @@ export default {
   },
 
 
-
   // METHODS
   methods: {
     startEditing() {
       this.isEditing = true
       setTimeout(() => this.$refs.nameList.focus(), 0)
     },
-
-
+    
     restorePreviousValue() {
       this.$refs.nameList.textContent = this.name
       this.isEditing = false
     },
-
 
     /**
      * Delete full List from database
@@ -147,7 +142,6 @@ export default {
         this.$emit('list-delete')
       }
     },
-
 
     /**
      * Validation Input

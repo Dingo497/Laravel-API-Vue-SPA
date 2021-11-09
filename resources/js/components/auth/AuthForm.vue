@@ -20,16 +20,21 @@
   </div>
 </template>
 
+
+
 <script>
 import RegisterForm from './RegisterForm.vue';
 import LoginForm from './LoginForm.vue';
 
 export default {
+  // COMPONENTS
   components: {
     RegisterForm,
     LoginForm,
   },
 
+
+  // DATAS
   data: () => {
     return {
       progress: '0%',
@@ -40,7 +45,12 @@ export default {
     }
   },
 
+
+  // METHODS
   methods: {
+    /**
+     * Send Data to API, register new user and "redirect" to lists
+     */
     register(data) {
       axios
         .post('http://127.0.0.1:8000/api/register'+
@@ -64,6 +74,9 @@ export default {
           })
     },
 
+    /**
+     * Send Data to API, login user and "redirect" to lists
+     */
     login(data) {
       axios
         .post('http://127.0.0.1:8000/api/login'+
@@ -84,11 +97,13 @@ export default {
               this.visible = false
             }, 3000);
           })
-    }
-  }
+    },
+  },
   
 }
 </script>
+
+
 
 <style scoped>
 @import url('https://use.fontawesome.com/releases/v5.8.2/css/all.css');

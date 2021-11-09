@@ -30,6 +30,7 @@ export function validateLengthInputs(text) {
 }
 
 
+
 /**
  * VALIDATE MATCH INPUTS
  * If currentText is same with previousText then return false.

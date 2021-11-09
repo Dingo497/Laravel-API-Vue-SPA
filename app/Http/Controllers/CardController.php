@@ -17,12 +17,10 @@ class CardController extends Controller
    */
   public function index()
   {
-   // Get cards
     $limit = request('limit');
     $cards = Card::paginate($limit);
     $cards = $cards->toArray();
 
-    // Send Json
     if( ! $cards ) {
       return $this->sendErrorMessage('Nothing Found');
     } else {
@@ -30,7 +28,6 @@ class CardController extends Controller
       return $this->sendSuccessMessage($cards, 'success');
     }
   }
-
 
 
 
@@ -42,7 +39,6 @@ class CardController extends Controller
    */
   public function store(Request $request)
   {
-    // Validation
     $validation = $this->validateRequest(request('title'));
     if($validation !== true) {
       return $validation;
@@ -51,11 +47,9 @@ class CardController extends Controller
       return $this->sendErrorMessage('You dont have todo_list_id');
     }
 
-    // Create Card
     Card::create($request->all());
     return $this->sendSuccessMessage(null, 'Your list has been created');
   }
-
 
 
 
@@ -67,17 +61,14 @@ class CardController extends Controller
    */
   public function show($id)
   {
-    // Get card
     $card = Card::find($id);
     
-    // Send Json
     if( ! $card ) {
       return $this->sendErrorMessage('Nothing Found');
     } else {
       return $this->sendSuccessMessage($this->transformOne($card), 'success');
     }
   }
-
 
 
 
@@ -92,7 +83,6 @@ class CardController extends Controller
   {
     $card = Card::find($id);
 
-    // Validation
     $validation = $this->validateRequest(request('title'));
     if($validation !== true) {
       return $validation;
@@ -104,11 +94,9 @@ class CardController extends Controller
       return $this->sendErrorMessage('You dont have todo_list_id');
     }
     
-    // Update card
     $card->update( $request->all() );
     return $this->sendSuccessMessage(null, 'Your list has been updated');
   }
-
 
 
 
@@ -121,12 +109,10 @@ class CardController extends Controller
   {
     $card = Card::find($id);
 
-    // Validation
     if( !$card ) {
       return $this->sendErrorMessage('Nothing Found');
     }
 
-    // Delete card
     $card->delete();
     return $this->sendSuccessMessage(null, 'Your card has been deleted');
   }

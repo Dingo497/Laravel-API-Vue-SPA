@@ -72,7 +72,6 @@ export default {
       this.showStep();
     },
 
-
     /**
      * Show showContainer
      * then program waiting for input

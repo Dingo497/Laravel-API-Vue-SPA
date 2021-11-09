@@ -8,6 +8,7 @@ trait CustomMethods {
    * Send Success Data/message in Json
    * @param $data
    * @param $message
+   * @param $count
    * @return Response
    */
   private function sendSuccessMessage($data = null, $message, $count = null)
@@ -20,7 +21,6 @@ trait CustomMethods {
       'body' => $data
     ], 200);
   }
-
 
 
 
@@ -41,9 +41,8 @@ trait CustomMethods {
 
 
 
-
   /**
-   * Transform database columns into API columns
+   * Transform database column into different API column
    * @param array $data
    * @return array
    */
@@ -67,9 +66,8 @@ trait CustomMethods {
 
 
 
-
   /**
-   * Transform database columns into API columns
+   * Transform database columns into different API columns
    * (more data)
    * @param array $data
    * @return array
@@ -78,7 +76,6 @@ trait CustomMethods {
   {
     return array_map([$this, 'transformOne'], $data);
   }
-
 
 
 

@@ -25,7 +25,6 @@ class AuthController extends Controller
       'email'    => 'required|string|email|max:255|min:6|unique:users',
       'password' => 'required|string|min:8',
     ]);
-
     if($validatedData->fails()) {
       return $this->sendErrorMessage('Your registration failed');
     }

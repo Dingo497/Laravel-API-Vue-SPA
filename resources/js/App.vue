@@ -127,12 +127,18 @@ export default {
         })
     },
 
+    /**
+     * Show User Profile
+     */
     showProfile(data) {
       this.overlay = true
       this.showProfileOverlay = true
       this.userData = data
     },
 
+    /**
+     * Hide User profile
+     */
     hideProfile() {
       this.overlay = false
       this.showProfileOverlay = false
@@ -159,5 +165,4 @@ export default {
 #overlay {
   transform: scale(1);
 }
-
 </style>
